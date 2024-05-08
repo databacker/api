@@ -3,6 +3,7 @@ info:
   title: Databack API
   description: API for communications and administration of databacker instances
   version: "1.0.0"
+paths: {} # technically not needed under openapi3, but does not hurt, and aids backwards-compatibility
 components:
   schemas:
     CommonRemoteDetails:
