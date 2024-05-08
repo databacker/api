@@ -27,12 +27,18 @@ components:
           description: URL to the remote
         credentials:
           type: string
-          description: base64-encoded Curve25519 key
+          description: |
+            Credentials to use to authenticate to the remote server.
+            Format is base64-encoded Curve25519 key
+          example: BwMqVfr1myxqX8tikIPYCyNtpHgMLIg/2nUE+pLQnTE=
         certificates:
           type: array
+          description: |
+            Fingerprints of the remote certificate of the remote server, or one that signed it in the chain.
+            Starts with hash algorithm, e.g. sha256, followed by a : and the hex of the fingerprint.
+          example: sha256:69729b8e15a86efc177a57afb7171dfc64add28c2fca8cf1507e34453ccb1470
           items:
             type: string
-            description: "Fingerprints of the remote certificate of the remote server, or one that signed it in the chain. Starts with hash algorithm, e.g. sha256, followed by a : and the hex of the fingerprint"
     NewInstance:
       type: object
       description: information for a new licensed databacker instance
@@ -47,8 +53,11 @@ components:
           type: string
           example: 550e8400-e29b-41d4-a716-446655440000
 
-    BaseConfig:
+    Config:
       type: object
+      description: |
+        Base configuration for a databack instance, with details in the spec.
+        Spec is determined by the kind.
       required:
         - version
         - kind
@@ -76,15 +85,20 @@ components:
               remote: '#/components/schemas/RemoteSpec'
     ConfigSpec:
       type: object
+      description: configuration details for a databack instance
       properties:
         database:
           $ref: "#/components/schemas/Database"
+          description: configuration information for accessing database to backup
         dump:
           $ref: "#/components/schemas/Dump"
+          description: schedule and details for backups
         targets:
-          type: array
-          description: list of targets to send the backup
-          items:
+          type: object
+          description: |
+            Configuration for individual targets that may be used for backup or restore.
+            To be referenced from within the Dump or Restore configuration.
+          additionalProperties:
             $ref: '#/components/schemas/Target'
         telemetry:
           $ref: '#/components/schemas/Telemetry'
@@ -189,10 +203,10 @@ components:
           type: string
           description: cron expression for the schedule
         frequency:
-          type: number
+          type: integer
           description: frequency in minutes
         begin:
-          type: number
+          type: integer
           description: when to start the schedule, in minutes from now, default is 0
         once:
           type: boolean
@@ -207,7 +221,9 @@ components:
         postBackup:
           type: string
           description: directory where to find scripts to run after the backup
+    
     RemoteSpec:
+      description: details for retrieving configuration from a remote server
       allOf:
       - $ref: '#/components/schemas/CommonRemoteDetails'
 

@@ -3,7 +3,7 @@ FROM alpine:3.19
 
 ARG TARGETOS=linux
 ARG TARGETARCH
-ARG OAPI_CODEGEN_VERSION=v2.1.0
+ARG OAPI_CODEGEN_VERSION=v2.2.0
 
 RUN apk add --no-cache bash curl git go make
 

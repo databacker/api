@@ -12,5 +12,5 @@ sdk-container:
 	docker run --rm -v $(PWD):/src -w /src -u $$(id -u) databack-api-builder make sdk
 
 go:
-	oapi-codegen -generate types,skip-prune -package api ./schemas.yaml > go/api/schemas.go
+	oapi-codegen -config ./oapi-codegen.yml ./schemas.yaml > go/api/schemas.go
 
