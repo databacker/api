@@ -6,10 +6,23 @@ info:
 paths: {} # technically not needed under openapi3, but does not hurt, and aids backwards-compatibility
 components:
   schemas:
+    Metadata:
+      type: object
+      properties:
+        name:
+          type: string
+          description: name of the config
+        description:
+          type: string
+          description: description of the config
+        digest:
+          type: string
+          description: SHA256 digest of the config, optional
+
     CommonRemoteDetails:
       type: object
       properties:
-        URL:
+        url:
           type: string
           description: URL to the remote
         credentials:
@@ -24,13 +37,13 @@ components:
       type: object
       description: information for a new licensed databacker instance
       properties:
-        PublicKey:
+        publicKey:
           type: string
           description: ECDSA public key to associate with the instance, PEM-encoded
     InstanceBody:
       type: object
       properties:
-        ID:
+        id:
           type: string
           example: 550e8400-e29b-41d4-a716-446655440000
 
@@ -44,129 +57,205 @@ components:
       properties:
         version:
           type: string
+          enum:
+          - config.databack.io/v1
         kind:
           type: string
+          enum:
+          - local
+          - remote
         metadata:
-          type: object
-          properties:
-            ID:
-              type: string
-              example: 550e8400-e29b-41d4-a716-446655440000
-            Certificate:
-              type: string
-              description: PEM-encoded certificate for the config, used only for verification of match
+          $ref: '#/components/schemas/Metadata'
           
         spec:
           type: object
           discriminator:
             propertyName: kind
             mapping:
-              local: '#/components/schemas/LocalSpec'
+              local: '#/components/schemas/ConfigSpec'
               remote: '#/components/schemas/RemoteSpec'
-    LocalSpec:
-      allOf:
-        - $ref: '#/components/schemas/BaseConfig'
-        - type: object
-          properties:
-            spec:
-              type: object
-              properties:
-                Database:
-                  type: object
-                  properties:
-                    url: 
-                      type: string
-                      description: url to database, including type
-                    credentials:
-                      type: object
-                      description: credentials for a database
-                      properties:
-                        username:
-                          type: string
-                          description: username for the database, encrypted
-                        password:
-                          type: string
-                          description: password for the database, encrypted
-                        token:
-                          type: string
-                          description: token for the database, encrypted
-                    include:
-                      type: array
-                      description: list of database names to backup, defaults to all
-                      items:
-                        type: string
-                    exclude:
-                      type: array
-                      description: list of database names to exclude from backup, defaults to none
-                      items:
-                        type: string
-                    safechars:
-                      type: boolean
-                      description: whether to use safe characters in the backup name, defaults to false
-                Targets:
-                  type: array
-                  description: list of targets to send the backup
-                  items:
-                    $ref: '#/components/schemas/Target'
-                Schedule:
-                  type: object
-                  properties:
-                    cron:
-                      type: string
-                      description: cron expression for the schedule
-                    frequency:
-                      type: number
-                      description: frequency in minutes
-                    begin:
-                      type: number
-                      description: when to start the schedule, in minutes from now, default is 0
-                TelemetryEndpoint:
-                  $ref: '#/components/schemas/CommonRemoteDetails'
+    ConfigSpec:
+      type: object
+      properties:
+        database:
+          $ref: "#/components/schemas/Database"
+        dump:
+          $ref: "#/components/schemas/Dump"
+        targets:
+          type: array
+          description: list of targets to send the backup
+          items:
+            $ref: '#/components/schemas/Target'
+        telemetry:
+          $ref: '#/components/schemas/Telemetry'
+        prune:
+          $ref: '#/components/schemas/Prune'
+        restore:
+          $ref: '#/components/schemas/Restore'
+        logging:
+          type: string
+          description: logging level, one of debug, info, warn, error, fatal          
+          enum:
+          - trace
+          - debug
+          - info
+          - warn
+          - error
 
+    Prune:
+      type: object
+      properties:
+        retention:
+          type: string
+          description: retention policies for backups
+
+    Restore:
+      type: object
+      properties:
+        preRestore:
+          type: string
+          description: directory where to find scripts to run before the restore
+        postRestore:
+          type: string
+          description: directory where to find scripts to run after the restore
+
+    Database:
+      type: object
+      properties:
+        server: 
+          type: string
+          description: hostname:port to database
+        port:
+          type: integer
+          description: port to connect to, defaults to 5432, overrides "server"
+        credentials:
+          $ref: "#/components/schemas/DBCredentials"
+
+    DBCredentials:
+      type: object
+      properties:
+        username:
+          type: string
+          description: username for the database
+        password:
+          type: string
+          description: password for the database
+
+    Dump:
+      type: object
+      properties:
+        include:
+          type: array
+          description: list of database names to backup, defaults to all
+          items:
+            type: string
+        exclude:
+          type: array
+          description: list of database names to exclude from backup, defaults to none
+          items:
+            type: string
+        safechars:
+          type: boolean
+          description: whether to use safe characters in the backup name, defaults to false
+        noDatabaseName:
+          type: boolean
+          description: do not include database name in backup, assumes will run restore already selected to specific database
+        schedule:
+          $ref: '#/components/schemas/Schedule'
+        compression:
+          type: string
+          description: compression algorithm to use, defaults to none
+        compact:
+          type: boolean
+          description: whether to compact the backup, defaults to false
+        maxAllowedPacket:
+          type: integer
+          description: maximum packet size to username
+        filenamePattern:
+          type: string
+          description: pattern for the filename
+        targets:
+          type: array
+          description: list of targets to send the backup, must reference one of the named targets in the config
+          items:
+            type: string
+        scripts:
+          $ref: '#/components/schemas/Scripts'
+
+    Schedule:
+      type: object
+      properties:
+        cron:
+          type: string
+          description: cron expression for the schedule
+        frequency:
+          type: number
+          description: frequency in minutes
+        begin:
+          type: number
+          description: when to start the schedule, in minutes from now, default is 0
+        once:
+          type: boolean
+          description: whether to run the schedule only once, default is false
+
+    Scripts:
+      type: object
+      properties:
+        preBackup:
+          type: string
+          description: directory where to find scripts to run before the backup
+        postBackup:
+          type: string
+          description: directory where to find scripts to run after the backup
     RemoteSpec:
       allOf:
-        - $ref: '#/components/schemas/BaseConfig'
-        - type: object
-          properties:
-            spec:
-              $ref: '#/components/schemas/CommonRemoteDetails'
+      - $ref: '#/components/schemas/CommonRemoteDetails'
+
+    Telemetry:
+      allOf:
+        - $ref: '#/components/schemas/CommonRemoteDetails'
+        - properties:
+            bufferSize:
+              type: integer
+              description: size of the buffer to use for telemetry, in bytes
 
     Log:
       type: object
       properties:
-        Run:
+        run:
           type: string
           example: 550e8400-e29b-41d4-a716-446655440000
           description: run ID as UUID
-        Timestamp:
+        timestamp:
           type: string
           description: timestamp for the date and time of a message, in RFC3339 format
-        Level:
+        level:
           type: string
           description: log level of the message, one of debug, info, warn, error, fatal
-        Fields:
+        fields:
           type: object
           additionalProperties: true
           description: key-value pairs for descriptive fields for the log message
-        Message:
+        message:
           type: string
           description: actual message
 
     LogSummary:
       type: object
       properties:
-        ID:
+        id:
           type: string
           example: 550e8400-e29b-41d4-a716-446655440000
-        Date:
+        date:
           type: integer
           description: timestamp for start of backup run
-        Completion:
+        completion:
           type: integer
           description: completion code, using a subset of http codes
-        Size:
+        size:
           type: integer
-          description: size of logs in bytes     
+          description: size of logs in bytes
+
     Target:
       type: object
       description: individual backup target
@@ -179,51 +268,47 @@ components:
         url:
           type: string
           description: url to send the backup to
+        spec:
+          type: object
+          discriminator:
+            propertyName: kind
+            mapping:
+              s3: '#/components/schemas/S3'
+              smb: '#/components/schemas/SMB'
+              file: '#/components/schemas/File'
       required:
         - type
         - url
     S3:
-      allOf:
-        - $ref: '#/components/schemas/Target'
-        - type: object
-          properties:
-            region:
-              type: string
-              description: region of the bucket
-            endpoint:
-              type: string
-              description: endpoint URL
-            credentials:
-              type: object
-              description: credentials for an S3 object store target
-              properties:
-                accessKeyID:
-                  type: string
-                  description: access key ID, encrypted
-                secretAccessKey:
-                  type: string
-                  description: secret access key, encrypted
+      type: object
+      properties:
+        region:
+          type: string
+          description: region of the bucket
+        endpoint:
+          type: string
+          description: endpoint URL
+        accessKeyID:
+          type: string
+          description: access key ID, encrypted
+        secretAccessKey:
+          type: string
+          description: secret access key, encrypted
     SMB:
-      allOf:
-        - $ref: '#/components/schemas/Target'
-        - type: object
-          properties:
-            credentials:
-              type: object
-              description: credentials for an SMB target
-              properties:
-                domain:
-                  type: string
-                  description: domain for the username, encrypted
-                username:
-                  type: string
-                  description: username for the target, encrypted
-                password:
-                  type: string
-                  description: password for the target, encrypted
+      type: object
+      properties:
+        domain:
+          type: string
+          description: domain for the username, encrypted
+        username:
+          type: string
+          description: username for the target, encrypted
+        password:
+          type: string
+          description: password for the target, encrypted
     File:
-      allOf:
-        - $ref: '#/components/schemas/Target'
+      type: object
+      properties: {}
 
   securitySchemes:
     # note that we could explicitly use the "type: oauth2" with flows, but that would
