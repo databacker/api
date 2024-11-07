@@ -304,6 +304,9 @@ components:
         endpoint:
           type: string
           description: endpoint URL
+        pathStyle:
+          type: boolean
+          description: whether to use path-style addressing instead of virtual-host-style, defaults to false
         accessKeyID:
           type: string
           description: access key ID, encrypted

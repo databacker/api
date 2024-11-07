@@ -213,6 +213,9 @@ type S3 struct {
 	// Endpoint endpoint URL
 	Endpoint *string `json:"endpoint,omitempty"`
 
+	// PathStyle whether to use path-style addressing instead of virtual-host-style, defaults to false
+	PathStyle *bool `json:"pathStyle,omitempty"`
+
 	// Region region of the bucket
 	Region *string `json:"region,omitempty"`
 
