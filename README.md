@@ -33,10 +33,24 @@ locally-provided information is the address of the controller and credentials.
 
 ### Reporting
 
-If reporting is enabled, each run of a backup will send a report to the controller, which can provide aggregated backup
+If reporting is enabled, each run of a backup will send reports to the controller, which can provide aggregated backup
 information as well as notifications of success, failure, time to run, and other useful metrics.
 Secrets, such as credentials, wil *not* be reported, while database names, hostnames and other
 information will be reported.
+
+Reporting is broken down into two parts:
+
+* logs
+* events
+
+Logs are output logs as provided by the databacker instance, e.g. `stdout` and `stderr` output. These usually
+are human-readable.
+
+Events are individual events of the backup, including structured data. They include start time, script execution times,
+success or failure, and other structured data. There is some duplication between logs and events, but events
+are explicitly intended to indicate state and provide timing metrics, without having to parse text logs.
+This also frees up logging to include things that might or might not make sense to a parser, without having to worry
+about breaking a parser.
 
 ## API Specification
 
