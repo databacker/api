@@ -5,8 +5,9 @@ package api
 
 // Defines values for ConfigKind.
 const (
-	Local  ConfigKind = "local"
-	Remote ConfigKind = "remote"
+	Encrypted ConfigKind = "encrypted"
+	Local     ConfigKind = "local"
+	Remote    ConfigKind = "remote"
 )
 
 // Defines values for ConfigVersion.
@@ -21,6 +22,12 @@ const (
 	Info  ConfigSpecLogging = "info"
 	Trace ConfigSpecLogging = "trace"
 	Warn  ConfigSpecLogging = "warn"
+)
+
+// Defines values for EncryptedSpecAlgorithm.
+const (
+	Aes              EncryptedSpecAlgorithm = "aes"
+	Chacha20Poly1305 EncryptedSpecAlgorithm = "chacha20poly1305"
 )
 
 // Defines values for TargetType.
@@ -130,6 +137,24 @@ type Dump struct {
 	Targets *[]string `json:"targets,omitempty"`
 }
 
+// EncryptedSpec Spec that is encrypted, using the provided algorithm. The symmetric key is encrypted with the public key of the instance.
+type EncryptedSpec struct {
+	// Algorithm algorithm used to encrypt the data
+	Algorithm *EncryptedSpecAlgorithm `json:"algorithm,omitempty"`
+
+	// Data encrypted data base64-encoded, when decrypted should be a valid Config
+	Data *string `json:"data,omitempty"`
+
+	// EncryptionKey symmetric key used to encrypt the data, encrypted with the public key of the recipient, base64-encoded
+	EncryptionKey *string `json:"encryptionKey,omitempty"`
+
+	// PublicKey public key of the recipient, PEM-encoded
+	PublicKey *string `json:"publicKey,omitempty"`
+}
+
+// EncryptedSpecAlgorithm algorithm used to encrypt the data
+type EncryptedSpecAlgorithm string
+
 // File defines model for File.
 type File = map[string]interface{}
 
@@ -207,7 +232,7 @@ type Restore struct {
 
 // S3 defines model for S3.
 type S3 struct {
-	// AccessKeyID access key ID, encrypted
+	// AccessKeyID access key ID
 	AccessKeyID *string `json:"accessKeyID,omitempty"`
 
 	// Endpoint endpoint URL
@@ -219,19 +244,19 @@ type S3 struct {
 	// Region region of the bucket
 	Region *string `json:"region,omitempty"`
 
-	// SecretAccessKey secret access key, encrypted
+	// SecretAccessKey secret access key
 	SecretAccessKey *string `json:"secretAccessKey,omitempty"`
 }
 
 // SMB defines model for SMB.
 type SMB struct {
-	// Domain domain for the username, encrypted
+	// Domain domain for the username
 	Domain *string `json:"domain,omitempty"`
 
-	// Password password for the target, encrypted
+	// Password password for the target
 	Password *string `json:"password,omitempty"`
 
-	// Username username for the target, encrypted
+	// Username username for the target
 	Username *string `json:"username,omitempty"`
 }
 

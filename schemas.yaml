@@ -73,6 +73,7 @@ components:
           enum:
           - local
           - remote
+          - encrypted
         metadata:
           $ref: '#/components/schemas/Metadata'
           
@@ -83,6 +84,7 @@ components:
             mapping:
               local: '#/components/schemas/ConfigSpec'
               remote: '#/components/schemas/RemoteSpec'
+              encrypted: '#/components/schemas/EncryptedSpec'
     ConfigSpec:
       type: object
       description: configuration details for a databack instance
@@ -153,7 +155,7 @@ components:
           description: username for the database
         password:
           type: string
-          description: password for the database, encrypted
+          description: password for the database
 
     Dump:
       type: object
@@ -226,6 +228,24 @@ components:
       description: details for retrieving configuration from a remote server
       allOf:
       - $ref: '#/components/schemas/CommonRemoteDetails'
+
+    EncryptedSpec:
+      type: object
+      description: Spec that is encrypted, using the provided algorithm. The symmetric key is encrypted with the public key of the instance.
+      properties:
+        algorithm: 
+          type: string
+          description: algorithm used to encrypt the data
+          enum: [aes,chacha20poly1305]
+        encryptionKey:
+          type: string
+          description: symmetric key used to encrypt the data, encrypted with the public key of the recipient, base64-encoded
+        publicKey:
+          type: string
+          description: public key of the recipient, PEM-encoded
+        data:
+          description: encrypted data base64-encoded, when decrypted should be a valid Config
+          type: string
 
     Telemetry:
       allOf:
@@ -309,22 +329,22 @@ components:
           description: whether to use path-style addressing instead of virtual-host-style, defaults to false
         accessKeyID:
           type: string
-          description: access key ID, encrypted
+          description: access key ID
         secretAccessKey:
           type: string
-          description: secret access key, encrypted
+          description: secret access key
     SMB:
       type: object
       properties:
         domain:
           type: string
-          description: domain for the username, encrypted
+          description: domain for the username
         username:
           type: string
-          description: username for the target, encrypted
+          description: username for the target
         password:
           type: string
-          description: password for the target, encrypted
+          description: password for the target
     File:
       type: object
       properties: {}
