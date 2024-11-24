@@ -235,14 +235,17 @@ components:
       properties:
         algorithm: 
           type: string
-          description: algorithm used to encrypt the data
+          description: algorithm used to encrypt the data, lower-case
           enum: [aes,chacha20poly1305]
         encryptionKey:
           type: string
-          description: symmetric key used to encrypt the data, encrypted with the public key of the recipient, base64-encoded
-        publicKey:
+          description: symmetric key used to encrypt the data, encrypted with the public key of the recipient using nacl shared secret, base64-encoded
+        receipientPublicKey:
           type: string
-          description: public key of the recipient, PEM-encoded
+          description: public key of the recipient, base64-encoded
+        senderPublicKey:
+          type: string
+          description: public key of the recipient, base64-encoded
         data:
           description: encrypted data base64-encoded, when decrypted should be a valid Config
           type: string
