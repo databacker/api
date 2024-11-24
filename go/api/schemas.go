@@ -139,20 +139,23 @@ type Dump struct {
 
 // EncryptedSpec Spec that is encrypted, using the provided algorithm. The symmetric key is encrypted with the public key of the instance.
 type EncryptedSpec struct {
-	// Algorithm algorithm used to encrypt the data
+	// Algorithm algorithm used to encrypt the data, lower-case
 	Algorithm *EncryptedSpecAlgorithm `json:"algorithm,omitempty"`
 
 	// Data encrypted data base64-encoded, when decrypted should be a valid Config
 	Data *string `json:"data,omitempty"`
 
-	// EncryptionKey symmetric key used to encrypt the data, encrypted with the public key of the recipient, base64-encoded
+	// EncryptionKey symmetric key used to encrypt the data, encrypted with the public key of the recipient using nacl shared secret, base64-encoded
 	EncryptionKey *string `json:"encryptionKey,omitempty"`
 
-	// PublicKey public key of the recipient, PEM-encoded
-	PublicKey *string `json:"publicKey,omitempty"`
+	// ReceipientPublicKey public key of the recipient, base64-encoded
+	ReceipientPublicKey *string `json:"receipientPublicKey,omitempty"`
+
+	// SenderPublicKey public key of the recipient, base64-encoded
+	SenderPublicKey *string `json:"senderPublicKey,omitempty"`
 }
 
-// EncryptedSpecAlgorithm algorithm used to encrypt the data
+// EncryptedSpecAlgorithm algorithm used to encrypt the data, lower-case
 type EncryptedSpecAlgorithm string
 
 // File defines model for File.
