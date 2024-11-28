@@ -4,3 +4,4 @@ generate:
 output-options:
   skip-prune: true
   name-normalizer: ToCamelCaseWithInitialisms
+  yaml-tags: true
