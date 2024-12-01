@@ -26,7 +26,7 @@ const (
 
 // Defines values for EncryptedSpecAlgorithm.
 const (
-	Aes              EncryptedSpecAlgorithm = "aes"
+	AesGcm256        EncryptedSpecAlgorithm = "aes-gcm-256"
 	Chacha20Poly1305 EncryptedSpecAlgorithm = "chacha20poly1305"
 )
 
@@ -139,14 +139,11 @@ type Dump struct {
 
 // EncryptedSpec Spec that is encrypted, using the provided algorithm. The symmetric key is encrypted with the public key of the instance.
 type EncryptedSpec struct {
-	// Algorithm algorithm used to encrypt the data, lower-case
+	// Algorithm algorithm used to encrypt the data, lower-case, with the key derived using NaCL key agreement
 	Algorithm *EncryptedSpecAlgorithm `json:"algorithm,omitempty" yaml:"algorithm,omitempty"`
 
 	// Data encrypted data base64-encoded, when decrypted should be a valid Config
 	Data *string `json:"data,omitempty" yaml:"data,omitempty"`
-
-	// EncryptionKey symmetric key used to encrypt the data, encrypted with the public key of the recipient using nacl shared secret, base64-encoded
-	EncryptionKey *string `json:"encryptionKey,omitempty" yaml:"encryptionKey,omitempty"`
 
 	// RecipientPublicKey public key of the recipient, base64-encoded
 	RecipientPublicKey *string `json:"recipientPublicKey,omitempty" yaml:"recipientPublicKey,omitempty"`
@@ -155,7 +152,7 @@ type EncryptedSpec struct {
 	SenderPublicKey *string `json:"senderPublicKey,omitempty" yaml:"senderPublicKey,omitempty"`
 }
 
-// EncryptedSpecAlgorithm algorithm used to encrypt the data, lower-case
+// EncryptedSpecAlgorithm algorithm used to encrypt the data, lower-case, with the key derived using NaCL key agreement
 type EncryptedSpecAlgorithm string
 
 // File defines model for File.
