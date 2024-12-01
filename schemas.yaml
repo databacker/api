@@ -240,7 +240,7 @@ components:
         encryptionKey:
           type: string
           description: symmetric key used to encrypt the data, encrypted with the public key of the recipient using nacl shared secret, base64-encoded
-        receipientPublicKey:
+        recipientPublicKey:
           type: string
           description: public key of the recipient, base64-encoded
         senderPublicKey:

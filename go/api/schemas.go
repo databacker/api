@@ -148,8 +148,8 @@ type EncryptedSpec struct {
 	// EncryptionKey symmetric key used to encrypt the data, encrypted with the public key of the recipient using nacl shared secret, base64-encoded
 	EncryptionKey *string `json:"encryptionKey,omitempty" yaml:"encryptionKey,omitempty"`
 
-	// ReceipientPublicKey public key of the recipient, base64-encoded
-	ReceipientPublicKey *string `json:"receipientPublicKey,omitempty" yaml:"receipientPublicKey,omitempty"`
+	// RecipientPublicKey public key of the recipient, base64-encoded
+	RecipientPublicKey *string `json:"recipientPublicKey,omitempty" yaml:"recipientPublicKey,omitempty"`
 
 	// SenderPublicKey public key of the recipient, base64-encoded
 	SenderPublicKey *string `json:"senderPublicKey,omitempty" yaml:"senderPublicKey,omitempty"`
