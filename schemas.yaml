@@ -6,6 +6,11 @@ info:
 paths: {} # technically not needed under openapi3, but does not hurt, and aids backwards-compatibility
 components:
   schemas:
+    KeyInfo:
+      type: string
+      description: types of info to use for key derivation functions
+      enum:
+      - SymmetricKey
     Metadata:
       type: object
       properties:

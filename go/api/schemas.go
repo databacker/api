@@ -30,6 +30,11 @@ const (
 	Chacha20Poly1305 EncryptedSpecAlgorithm = "chacha20poly1305"
 )
 
+// Defines values for KeyInfo.
+const (
+	SymmetricKey KeyInfo = "SymmetricKey"
+)
+
 // Defines values for TargetType.
 const (
 	TargetTypeFile TargetType = "file"
@@ -162,6 +167,9 @@ type File = map[string]interface{}
 type InstanceBody struct {
 	ID *string `json:"id,omitempty" yaml:"id,omitempty"`
 }
+
+// KeyInfo defines model for KeyInfo.
+type KeyInfo string
 
 // Log defines model for Log.
 type Log struct {
