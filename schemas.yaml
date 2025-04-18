@@ -236,7 +236,7 @@ components:
       properties:
         algorithm:
           type: string
-          enum: [aes256-cbc,chacha20poly1305,smime-aes256-cbc,pbkdf2-aes256-cbc,age-chacha20-poly1305]
+          enum: [aes256-cbc,chacha20-poly1305,smime-aes256-cbc,pbkdf2-aes256-cbc,age-chacha20-poly1305]
           description: algorithm to use for encryption
         key:
           type: string
@@ -257,7 +257,7 @@ components:
         algorithm: 
           type: string
           description: algorithm used to encrypt the data, lower-case, with the key derived using NaCL key agreement
-          enum: [aes-gcm-256,chacha20poly1305]
+          enum: [aes256-gcm,chacha20-poly1305]
         recipientPublicKey:
           type: string
           description: public key of the recipient, base64-encoded
