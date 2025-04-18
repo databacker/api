@@ -195,6 +195,8 @@ components:
         filenamePattern:
           type: string
           description: pattern for the filename
+        encryption:
+          $ref: '#/components/schemas/Encryption'
         targets:
           type: array
           description: list of targets to send the backup, must reference one of the named targets in the config
@@ -228,6 +230,20 @@ components:
         postBackup:
           type: string
           description: directory where to find scripts to run after the backup
+    
+    Encryption:
+      type: object
+      properties:
+        algorithm:
+          type: string
+          enum: [aes256-cbc,chacha20poly1305,smime-aes256-cbc,pbkdf2-aes256-cbc,age-chacha20-poly1305]
+          description: algorithm to use for encryption
+        key:
+          type: string
+          description: encryption key or certificate, depending on algorithm, base64-encoded
+        keyPath:
+          type: string
+          description: path to the encryption key or certificate, depending on algorithm
     
     RemoteSpec:
       description: details for retrieving configuration from a remote server
