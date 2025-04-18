@@ -26,15 +26,15 @@ const (
 
 // Defines values for EncryptedSpecAlgorithm.
 const (
-	EncryptedSpecAlgorithmAesGcm256        EncryptedSpecAlgorithm = "aes-gcm-256"
-	EncryptedSpecAlgorithmChacha20Poly1305 EncryptedSpecAlgorithm = "chacha20poly1305"
+	EncryptedSpecAlgorithmAes256Gcm        EncryptedSpecAlgorithm = "aes256-gcm"
+	EncryptedSpecAlgorithmChacha20Poly1305 EncryptedSpecAlgorithm = "chacha20-poly1305"
 )
 
 // Defines values for EncryptionAlgorithm.
 const (
 	EncryptionAlgorithmAes256Cbc           EncryptionAlgorithm = "aes256-cbc"
 	EncryptionAlgorithmAgeChacha20Poly1305 EncryptionAlgorithm = "age-chacha20-poly1305"
-	EncryptionAlgorithmChacha20Poly1305    EncryptionAlgorithm = "chacha20poly1305"
+	EncryptionAlgorithmChacha20Poly1305    EncryptionAlgorithm = "chacha20-poly1305"
 	EncryptionAlgorithmPbkdf2Aes256Cbc     EncryptionAlgorithm = "pbkdf2-aes256-cbc"
 	EncryptionAlgorithmSmimeAes256Cbc      EncryptionAlgorithm = "smime-aes256-cbc"
 )
