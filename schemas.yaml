@@ -189,6 +189,9 @@ components:
         compact:
           type: boolean
           description: whether to compact the backup, defaults to false
+        triggersAndFunctions:
+          type: boolean
+          description: whether to include triggers and functions in the backup, defaults to false
         maxAllowedPacket:
           type: integer
           description: maximum packet size to username
