@@ -192,12 +192,9 @@ components:
         triggers:
           type: boolean
           description: whether to include triggers in the backup, defaults to false
-        functions:
+        routines:
           type: boolean
-          description: whether to include functions in the backup, defaults to false
-        procedures:
-          type: boolean
-          description: whether to include procedures in the backup, defaults to false
+          description: whether to include routines, such as functions and procedures, in the backup, defaults to false
         maxAllowedPacket:
           type: integer
           description: maximum packet size to username
