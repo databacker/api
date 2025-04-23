@@ -134,6 +134,9 @@ type Dump struct {
 	// FilenamePattern pattern for the filename
 	FilenamePattern *string `json:"filenamePattern,omitempty" yaml:"filenamePattern,omitempty"`
 
+	// Functions whether to include functions in the backup, defaults to false
+	Functions *bool `json:"functions,omitempty" yaml:"functions,omitempty"`
+
 	// Include list of database names to backup, defaults to all
 	Include *[]string `json:"include,omitempty" yaml:"include,omitempty"`
 
@@ -143,6 +146,9 @@ type Dump struct {
 	// NoDatabaseName do not include database name in backup, assumes will run restore already selected to specific database
 	NoDatabaseName *bool `json:"noDatabaseName,omitempty" yaml:"noDatabaseName,omitempty"`
 
+	// Procedures whether to include procedures in the backup, defaults to false
+	Procedures *bool `json:"procedures,omitempty" yaml:"procedures,omitempty"`
+
 	// Safechars whether to use safe characters in the backup name, defaults to false
 	Safechars *bool     `json:"safechars,omitempty" yaml:"safechars,omitempty"`
 	Schedule  *Schedule `json:"schedule,omitempty" yaml:"schedule,omitempty"`
@@ -151,8 +157,8 @@ type Dump struct {
 	// Targets list of targets to send the backup, must reference one of the named targets in the config
 	Targets *[]string `json:"targets,omitempty" yaml:"targets,omitempty"`
 
-	// TriggersAndFunctions whether to include triggers and functions in the backup, defaults to false
-	TriggersAndFunctions *bool `json:"triggersAndFunctions,omitempty" yaml:"triggersAndFunctions,omitempty"`
+	// Triggers whether to include triggers in the backup, defaults to false
+	Triggers *bool `json:"triggers,omitempty" yaml:"triggers,omitempty"`
 }
 
 // EncryptedSpec Spec that is encrypted, using the provided algorithm. The symmetric key is encrypted with the public key of the instance.
