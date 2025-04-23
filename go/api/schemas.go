@@ -134,9 +134,6 @@ type Dump struct {
 	// FilenamePattern pattern for the filename
 	FilenamePattern *string `json:"filenamePattern,omitempty" yaml:"filenamePattern,omitempty"`
 
-	// Functions whether to include functions in the backup, defaults to false
-	Functions *bool `json:"functions,omitempty" yaml:"functions,omitempty"`
-
 	// Include list of database names to backup, defaults to all
 	Include *[]string `json:"include,omitempty" yaml:"include,omitempty"`
 
@@ -146,8 +143,8 @@ type Dump struct {
 	// NoDatabaseName do not include database name in backup, assumes will run restore already selected to specific database
 	NoDatabaseName *bool `json:"noDatabaseName,omitempty" yaml:"noDatabaseName,omitempty"`
 
-	// Procedures whether to include procedures in the backup, defaults to false
-	Procedures *bool `json:"procedures,omitempty" yaml:"procedures,omitempty"`
+	// Routines whether to include routines, such as functions and procedures, in the backup, defaults to false
+	Routines *bool `json:"routines,omitempty" yaml:"routines,omitempty"`
 
 	// Safechars whether to use safe characters in the backup name, defaults to false
 	Safechars *bool     `json:"safechars,omitempty" yaml:"safechars,omitempty"`
