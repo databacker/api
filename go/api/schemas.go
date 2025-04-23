@@ -150,6 +150,9 @@ type Dump struct {
 
 	// Targets list of targets to send the backup, must reference one of the named targets in the config
 	Targets *[]string `json:"targets,omitempty" yaml:"targets,omitempty"`
+
+	// TriggersAndFunctions whether to include triggers and functions in the backup, defaults to false
+	TriggersAndFunctions *bool `json:"triggersAndFunctions,omitempty" yaml:"triggersAndFunctions,omitempty"`
 }
 
 // EncryptedSpec Spec that is encrypted, using the provided algorithm. The symmetric key is encrypted with the public key of the instance.
