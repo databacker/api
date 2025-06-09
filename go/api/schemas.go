@@ -194,11 +194,6 @@ type EncryptionAlgorithm string
 // File defines model for File.
 type File = map[string]interface{}
 
-// InstanceBody defines model for InstanceBody.
-type InstanceBody struct {
-	ID *string `json:"id,omitempty" yaml:"id,omitempty"`
-}
-
 // KeyInfo types of info to use for key derivation functions
 type KeyInfo string
 
@@ -243,12 +238,6 @@ type Metadata struct {
 
 	// Name name of the config
 	Name *string `json:"name,omitempty" yaml:"name,omitempty"`
-}
-
-// NewInstance information for a new licensed databacker instance
-type NewInstance struct {
-	// PublicKey ECDSA public key to associate with the instance, PEM-encoded
-	PublicKey *string `json:"publicKey,omitempty" yaml:"publicKey,omitempty"`
 }
 
 // Prune defines model for Prune.

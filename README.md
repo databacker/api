@@ -1,11 +1,11 @@
 # api
 
-API specification for communicating between backup services and a management service
+API specification for communicating between backup services and a management service.
 
-databacker software backs up databases to remote targets, e.g. files, CMB shares,
-S3 buckets, etc.
+databacker software backs up databases to remote targets, e.g. files, CMB
+shares, S3 buckets, etc.
 
-This is the specification of the API between a databacker instance and a databacker controller.
+This is the specification of the API between a databacker instance and a databacker controller, the "southbound" API. The "northbound" API is the API between a controller and an end-user, which is not specified here.
 
 You do **not** need to use this API or the controller. Each databacker instance
 is configured locally using environment variables, CLI flags or a configuration file either:
@@ -19,10 +19,11 @@ You **may** choose to use a controller to manage: targets and scheduling; for re
 
 ## Services
 
-The controller optionally provides up to two services:
+The controller optionally provides up to three services:
 
 * scheduling
 * reporting
+* administration (northbound API, not specified here)
 
 ### Scheduling
 
@@ -58,11 +59,10 @@ The API is a RESTful API, with JSON payloads.
 The API is defined in this repository in [OpenAPI 3.0 spec](https://github.com/OAI/OpenAPI-Specification) format.
 It is used to generate bindings both for a controller implementation and databacker instances.
 
-The API specification includes the following sections:
+This API specification includes the following sections:
 
 * reporting (by databacker instances)
 * orchestration (of databacker instances)
-* administration (by end-users)
 
 ### Protocol
 
@@ -72,30 +72,13 @@ for example logs, both submission by a databacker endpoint and retrieval by a us
 
 ### Authentication & Authorization
 
-API requests, whether from an end-user or a databacker instance, must be authenticated.
+API requests must be authenticated.
 [Json Web Tokens (JWT)](https://jwt.io/), defined in [RFC7519](https://tools.ietf.org/html/rfc7519)
 are used for validating and authorizing requests.
 
 The JWTs are issued via one of two methods:
 
-* OAuth2 Authorization Code Grant, for end-users (administration)
 * OAuth2 Client Flow, for databacker instances (reporting, orchestration)
-
-#### OAuth2 Authorization Code Grant
-
-End users accessing the controller Web UI use the
-[OAuth2 Authorization Code Grant](https://datatracker.ietf.org/doc/html/rfc6749#section-4.1).
-
-When creating a new databacker instance using the admin UI or API, the user must submit an ECDSA public key
-to affiliate with the instance. The user must generate the keypair client-side, and submit the public key.
-
-A Web UI _may_, for user convenience, generate a new keypair client-side, and submit the public key.
-This keypair must be generated entirely client-side; the API simply accepts a public key to associate with the
-instance. Web UIs and similar should generate the key client side, or allow the user to submit a public key.
-
-This API does not specify the authorization server, only that a valid JWT must exist.
-A controller may implement an authorization server, but it is not required as part of this
-specification.
 
 #### OAuth2 Client Flow
 
