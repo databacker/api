@@ -44,19 +44,6 @@ components:
           example: sha256:69729b8e15a86efc177a57afb7171dfc64add28c2fca8cf1507e34453ccb1470
           items:
             type: string
-    NewInstance:
-      type: object
-      description: information for a new licensed databacker instance
-      properties:
-        publicKey:
-          type: string
-          description: ECDSA public key to associate with the instance, PEM-encoded
-    InstanceBody:
-      type: object
-      properties:
-        id:
-          type: string
-          example: 550e8400-e29b-41d4-a716-446655440000
 
     Config:
       type: object

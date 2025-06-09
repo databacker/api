@@ -6,15 +6,9 @@ resources: instance, config, log
 
 Actions we need to do (requestor):
 
-- create a new instance (admin)
-- create a device config (admin)
-- get a list of instances (admin)
-- get info about a specific device, other than config (admin) 
-- get a device config (admin, device)
+- get a device config (device)
 - create a backup attempt (device)
 - submit logs for a backup attempt (device)
-- get information about a backup attempt, e.g. date, device, start, finish, etc., except for actual logs (admin)
-- get logs for a backup attempt (admin)
 
 Paths:
 
