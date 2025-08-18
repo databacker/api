@@ -195,6 +195,9 @@ components:
           description: list of targets to send the backup, must reference one of the named targets in the config
           items:
             type: string
+        parallelism:
+          type: integer
+          description: level of parallelism to use for the backup, defaults to 1
         scripts:
           $ref: '#/components/schemas/Scripts'
 

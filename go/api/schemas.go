@@ -143,6 +143,9 @@ type Dump struct {
 	// NoDatabaseName do not include database name in backup, assumes will run restore already selected to specific database
 	NoDatabaseName *bool `json:"noDatabaseName,omitempty" yaml:"noDatabaseName,omitempty"`
 
+	// Parallelism level of parallelism to use for the backup, defaults to 1
+	Parallelism *int `json:"parallelism,omitempty" yaml:"parallelism,omitempty"`
+
 	// Routines whether to include routines, such as functions and procedures, in the backup, defaults to false
 	Routines *bool `json:"routines,omitempty" yaml:"routines,omitempty"`
 
