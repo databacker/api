@@ -1,0 +1,8 @@
+package: api
+generate:
+  models: true
+output: go/api/schemas.go
+output-options:
+  skip-prune: true
+  name-normalizer: ToCamelCaseWithInitialisms
+  yaml-tags: true

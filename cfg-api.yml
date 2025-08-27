@@ -1,7 +1,12 @@
 package: api
 generate:
+  chi-server: true
   models: true
+  strict-server: true
+output: go/api/api.go
 output-options:
   skip-prune: true
   name-normalizer: ToCamelCaseWithInitialisms
   yaml-tags: true
+import-mapping:
+  ./schemas.yaml: "-"
