@@ -11,8 +11,7 @@ sdk-container:
 	docker build -f .devcontainer/Dockerfile -t databack-api-builder .
 	docker run --rm -v $(PWD):/src -w /src -u $$(id -u) databack-api-builder make sdk
 
-# MUST use oapi-codegen from commit d3a2029448254ffee6dcc0284dbd4aeb2e1cab60 or later
-# or v2.5.0 or later.
+# MUST use oapi-codegen v2.5.0 or later.
 go:
-	oapi-codegen -config ./oapi-codegen.yml ./schemas.yaml > go/api/schemas.go
-
+	oapi-codegen -config ./cfg-schemas.yml ./src/schemas.yaml
+	oapi-codegen -config ./cfg-api.yml ./src/api.yaml
