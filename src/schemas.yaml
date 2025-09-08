@@ -168,6 +168,9 @@ components:
         noDatabaseName:
           type: boolean
           description: do not include database name in backup, assumes will run restore already selected to specific database
+        skipExtendedInsert:
+          type: boolean
+          description: whether to skip extended insert statements and use one insert per row, defaults to false
         schedule:
           $ref: '#/components/schemas/Schedule'
         compression:

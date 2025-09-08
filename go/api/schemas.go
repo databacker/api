@@ -154,6 +154,9 @@ type Dump struct {
 	Schedule  *Schedule `json:"schedule,omitempty" yaml:"schedule,omitempty"`
 	Scripts   *Scripts  `json:"scripts,omitempty" yaml:"scripts,omitempty"`
 
+	// SkipExtendedInsert whether to skip extended insert statements and use one insert per row, defaults to false
+	SkipExtendedInsert *bool `json:"skipExtendedInsert,omitempty" yaml:"skipExtendedInsert,omitempty"`
+
 	// Targets list of targets to send the backup, must reference one of the named targets in the config
 	Targets *[]string `json:"targets,omitempty" yaml:"targets,omitempty"`
 
