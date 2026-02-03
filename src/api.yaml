@@ -135,3 +135,98 @@ paths:
                 properties:           
                   message:
                     type: string
+
+  /telemetry/{instance}/traces:
+    get:
+      description: get the ability to send traces to this endpoint, given credentials
+      parameters:
+        - in: path
+          name: instance
+          schema:
+            type: string
+          required: true
+          description: Unique ID of the databacker instance for whom this trace is generated
+      responses:
+        '200':
+          description: successfully authenticated and can send traces
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  trace:
+                    type: string
+        '404':
+          description: databacker instance not found, or unknown to user
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object 
+                properties:           
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object 
+                properties:           
+                  message:
+                    type: string
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object 
+                properties:           
+                  message:
+                    type: string
+    post:
+      description: upload OTLP traces from a databacker instance
+      parameters:
+        - in: path
+          name: instance
+          schema:
+            type: string
+          required: true
+          description: Unique ID of the databacker instance for whom the log is being uploaded
+      requestBody:
+        required: true
+        content:
+          application/x-protobuf:
+            schema:
+              type: string
+              format: binary
+              description: "Serialized ExportTraceServiceRequest protobuf message"
+      responses:
+        '201':
+          description: successfully posted backup trace, will return no data. Reference to the trace ID is in the Location header.
+        '400':
+          description: Invalid request
+          content:
+            application/x-protobuf:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object 
+                properties:           
+                  message:
+                    type: string
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                type: object 
+                properties:           
+                  message:
+                    type: string
