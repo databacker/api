@@ -203,15 +203,23 @@ paths:
               format: binary
               description: "Serialized ExportTraceServiceRequest protobuf message"
       responses:
-        '201':
-          description: successfully posted backup trace, will return no data. Reference to the trace ID is in the Location header.
-        '400':
-          description: Invalid request
+        '200':
+          description: successfully posted backup trace
           content:
             application/x-protobuf:
               schema:
                 type: string
                 format: binary
+                description: "Serialized ExportTraceServiceResponse protobuf message"
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                type: object 
+                properties:           
+                  message:
+                    type: string
         '401':
           description: Unauthorized
           content:
@@ -230,3 +238,10 @@ paths:
                 properties:           
                   message:
                     type: string
+        '429':
+          description: "Rate Limited"
+          headers:
+            Retry-After:
+              schema:
+                type: string
+                description: "Seconds to wait before retrying"                    

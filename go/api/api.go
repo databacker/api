@@ -581,31 +581,34 @@ type PostTelemetryInstanceTracesResponseObject interface {
 	VisitPostTelemetryInstanceTracesResponse(w http.ResponseWriter) error
 }
 
-type PostTelemetryInstanceTraces201Response struct {
-}
-
-func (response PostTelemetryInstanceTraces201Response) VisitPostTelemetryInstanceTracesResponse(w http.ResponseWriter) error {
-	w.WriteHeader(201)
-	return nil
-}
-
-type PostTelemetryInstanceTraces400ApplicationXProtobufResponse struct {
+type PostTelemetryInstanceTraces200ApplicationXProtobufResponse struct {
 	Body          io.Reader
 	ContentLength int64
 }
 
-func (response PostTelemetryInstanceTraces400ApplicationXProtobufResponse) VisitPostTelemetryInstanceTracesResponse(w http.ResponseWriter) error {
+func (response PostTelemetryInstanceTraces200ApplicationXProtobufResponse) VisitPostTelemetryInstanceTracesResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/x-protobuf")
 	if response.ContentLength != 0 {
 		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
 	}
-	w.WriteHeader(400)
+	w.WriteHeader(200)
 
 	if closer, ok := response.Body.(io.ReadCloser); ok {
 		defer closer.Close()
 	}
 	_, err := io.Copy(w, response.Body)
 	return err
+}
+
+type PostTelemetryInstanceTraces400JSONResponse struct {
+	Message *string `json:"message,omitempty" yaml:"message,omitempty"`
+}
+
+func (response PostTelemetryInstanceTraces400JSONResponse) VisitPostTelemetryInstanceTracesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
 }
 
 type PostTelemetryInstanceTraces401JSONResponse struct {
@@ -628,6 +631,20 @@ func (response PostTelemetryInstanceTraces403JSONResponse) VisitPostTelemetryIns
 	w.WriteHeader(403)
 
 	return json.NewEncoder(w).Encode(response)
+}
+
+type PostTelemetryInstanceTraces429ResponseHeaders struct {
+	RetryAfter string
+}
+
+type PostTelemetryInstanceTraces429Response struct {
+	Headers PostTelemetryInstanceTraces429ResponseHeaders
+}
+
+func (response PostTelemetryInstanceTraces429Response) VisitPostTelemetryInstanceTracesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Retry-After", fmt.Sprint(response.Headers.RetryAfter))
+	w.WriteHeader(429)
+	return nil
 }
 
 // StrictServerInterface represents all server handlers.
