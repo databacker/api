@@ -102,6 +102,21 @@ The following attributes MUST or SHOULD be set on spans. Attribute key constants
 | `backup.bytes`          | `BackupAttrBytes`        | integer | SHOULD   | Bytes processed in this phase                     |
 | `backup.object_count`   | `BackupAttrObjectCount`  | integer | SHOULD   | Objects (tables, files, etc.) processed           |
 
+#### Target identity attributes (`upload` spans)
+
+These attributes identify **which target** received the backup artifact. They MUST be set on every
+`upload` span. When a backup run has multiple targets, emit **one child `upload` span per target**,
+each carrying its own set of `backup.target.*` attributes (see [Multiple targets](#multiple-targets)).
+
+Credentials, access keys, tokens, signed URLs, and any other secrets MUST NOT appear in
+`backup.target.url` or any other trace attribute.
+
+| Attribute key          | Go constant              | Type   | Required | Description                                                                                              |
+|------------------------|--------------------------|--------|----------|----------------------------------------------------------------------------------------------------------|
+| `backup.target.name`   | `BackupAttrTargetName`   | string | MUST     | Target key/name from the engine config, e.g. `local-dev`, `daily-s3`, `archive`                        |
+| `backup.target.type`   | `BackupAttrTargetType`   | string | MUST     | Target type matching the engine config: `file`, `s3`, or `smb`                                          |
+| `backup.target.url`    | `BackupAttrTargetURL`    | string | MUST     | Safe display URL identifying the destination, e.g. `file:///var/lib/databacker/backups`, `s3://bucket/path`, `smb://server/share/path`. No secrets. |
+
 #### Attributes on the root `run` span only
 
 | Attribute key        | Go constant             | Type    | Required | Description                                        |
@@ -114,6 +129,21 @@ The following attributes MUST or SHOULD be set on spans. Attribute key constants
 
 `backup.phase` MUST always match the span name for phase spans. On the root `run` span, `backup.phase`
 transitions from `run` (while running) to `complete` once all child phases finish successfully.
+
+---
+
+### Multiple targets
+
+When a backup run uploads to more than one target, engines MUST create **one child `upload` span per
+target** rather than a single span that aggregates all targets. Each child span:
+
+- MUST have span name `upload` (`BackupSpanUpload`).
+- MUST set `backup.phase` = `upload` (`BackupPhaseUpload`).
+- MUST set its own `backup.target.name`, `backup.target.type`, and `backup.target.url`.
+- MAY set `backup.bytes` independently per target.
+- MUST be a child of the root `run` span (or an intermediate `upload` grouping span).
+
+This allows the cloud service to surface per-target status in `BackupTimelineEvent` records.
 
 ---
 
@@ -164,6 +194,56 @@ transitions from `run` (while running) to `complete` once all child phases finis
     { "key": "backup.object_count",   "value": { "intValue": "42" } },
     { "key": "backup.event.label",    "value": { "stringValue": "Dump complete" } },
     { "key": "otel.status_code",      "value": { "stringValue": "OK" } }
+  ]
+}
+```
+
+#### Successful backup — `upload` span to a file target
+
+```json
+{
+  "name": "upload",
+  "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "spanId": "c4de929d0e1f5831",
+  "parentSpanId": "00f067aa0ba902b7",
+  "startTimeUnixNano": "1715000120000000000",
+  "endTimeUnixNano":   "1715000135000000000",
+  "status": { "code": "STATUS_CODE_OK" },
+  "attributes": [
+    { "key": "backup.run_id",        "value": { "stringValue": "550e8400-e29b-41d4-a716-446655440000" } },
+    { "key": "backup.phase",         "value": { "stringValue": "upload" } },
+    { "key": "backup.status",        "value": { "stringValue": "ok" } },
+    { "key": "backup.target.name",   "value": { "stringValue": "local-dev" } },
+    { "key": "backup.target.type",   "value": { "stringValue": "file" } },
+    { "key": "backup.target.url",    "value": { "stringValue": "file:///var/lib/databacker/dev/database1" } },
+    { "key": "backup.bytes",         "value": { "intValue": "104857600" } },
+    { "key": "backup.event.label",   "value": { "stringValue": "Upload complete" } },
+    { "key": "otel.status_code",     "value": { "stringValue": "OK" } }
+  ]
+}
+```
+
+#### Successful backup — `upload` span to an S3 target
+
+```json
+{
+  "name": "upload",
+  "traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "spanId": "d5ef030e1f2g6942",
+  "parentSpanId": "00f067aa0ba902b7",
+  "startTimeUnixNano": "1715000120000000000",
+  "endTimeUnixNano":   "1715000150000000000",
+  "status": { "code": "STATUS_CODE_OK" },
+  "attributes": [
+    { "key": "backup.run_id",        "value": { "stringValue": "550e8400-e29b-41d4-a716-446655440000" } },
+    { "key": "backup.phase",         "value": { "stringValue": "upload" } },
+    { "key": "backup.status",        "value": { "stringValue": "ok" } },
+    { "key": "backup.target.name",   "value": { "stringValue": "daily-s3" } },
+    { "key": "backup.target.type",   "value": { "stringValue": "s3" } },
+    { "key": "backup.target.url",    "value": { "stringValue": "s3://my-backup-bucket/prod/database1" } },
+    { "key": "backup.bytes",         "value": { "intValue": "104857600" } },
+    { "key": "backup.event.label",   "value": { "stringValue": "Upload complete" } },
+    { "key": "otel.status_code",     "value": { "stringValue": "OK" } }
   ]
 }
 ```
@@ -222,11 +302,31 @@ span.SetAttributes(
 )
 // ... do work ...
 span.SetAttributes(
-    attribute.String(string(api.BackupAttrStatus),      string(api.BackupStatusOK)),
+    attribute.String(string(api.BackupAttrStatus),         string(api.BackupStatusOK)),
     attribute.String(string(api.BackupAttrOtelStatusCode), string(api.OtelStatusCodeOK)),
-    attribute.Int64(string(api.BackupAttrBytes),        bytesWritten),
-    attribute.Int(string(api.BackupAttrObjectCount),    tableCount),
+    attribute.Int64(string(api.BackupAttrBytes),           bytesWritten),
+    attribute.Int(string(api.BackupAttrObjectCount),       tableCount),
 )
 span.End()
+
+// One upload span per target — no secrets in the URL
+for _, t := range targets {
+    _, uploadSpan := tracer.Start(ctx, string(api.BackupSpanUpload))
+    uploadSpan.SetAttributes(
+        attribute.String(string(api.BackupAttrRunID),       runID),
+        attribute.String(string(api.BackupAttrPhase),       string(api.BackupPhaseUpload)),
+        attribute.String(string(api.BackupAttrStatus),      string(api.BackupStatusRunning)),
+        attribute.String(string(api.BackupAttrTargetName),  t.Name),
+        attribute.String(string(api.BackupAttrTargetType),  t.Type),
+        attribute.String(string(api.BackupAttrTargetURL),   t.DisplayURL), // MUST NOT contain credentials
+    )
+    // ... upload ...
+    uploadSpan.SetAttributes(
+        attribute.String(string(api.BackupAttrStatus),         string(api.BackupStatusOK)),
+        attribute.String(string(api.BackupAttrOtelStatusCode), string(api.OtelStatusCodeOK)),
+        attribute.Int64(string(api.BackupAttrBytes),           bytesUploaded),
+    )
+    uploadSpan.End()
+}
 ```
 

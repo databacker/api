@@ -20,6 +20,9 @@ const (
 	BackupAttrServerAddress         BackupAttributeKey = "server.address"
 	BackupAttrServerPort            BackupAttributeKey = "server.port"
 	BackupAttrStatus                BackupAttributeKey = "backup.status"
+	BackupAttrTargetName            BackupAttributeKey = "backup.target.name"
+	BackupAttrTargetType            BackupAttributeKey = "backup.target.type"
+	BackupAttrTargetURL             BackupAttributeKey = "backup.target.url"
 )
 
 // Defines values for BackupPhase.
@@ -129,6 +132,15 @@ const (
 //	server.port             — port number of the database server
 //	otel.status_code        — OTEL span status: OK, ERROR, or UNSET
 //	otel.status_description — human-readable status description, set on error
+//
+//	Target identity attributes (upload spans):
+//	backup.target.name      — target key/name from the engine config, e.g. "daily-s3", "local-dev"
+//	backup.target.type      — target type matching the engine config, e.g. "file", "s3", "smb"
+//	backup.target.url       — safe display URL identifying the destination, e.g.
+//	                          "file:///var/lib/databacker/dev/database1",
+//	                          "s3://bucket/path", "smb://server/share/path".
+//	                          MUST NOT contain credentials, access keys, tokens,
+//	                          signed URLs, or any other secrets.
 type BackupAttributeKey string
 
 // BackupPhase Value for the backup.phase span attribute.

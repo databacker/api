@@ -479,6 +479,15 @@ components:
           server.port             — port number of the database server
           otel.status_code        — OTEL span status: OK, ERROR, or UNSET
           otel.status_description — human-readable status description, set on error
+
+          Target identity attributes (upload spans):
+          backup.target.name      — target key/name from the engine config, e.g. "daily-s3", "local-dev"
+          backup.target.type      — target type matching the engine config, e.g. "file", "s3", "smb"
+          backup.target.url       — safe display URL identifying the destination, e.g.
+                                    "file:///var/lib/databacker/dev/database1",
+                                    "s3://bucket/path", "smb://server/share/path".
+                                    MUST NOT contain credentials, access keys, tokens,
+                                    signed URLs, or any other secrets.
       enum:
       - backup.run_id
       - backup.phase
@@ -495,6 +504,9 @@ components:
       - server.port
       - otel.status_code
       - otel.status_description
+      - backup.target.name
+      - backup.target.type
+      - backup.target.url
       x-enum-varnames:
       - BackupAttrRunID
       - BackupAttrPhase
@@ -511,6 +523,9 @@ components:
       - BackupAttrServerPort
       - BackupAttrOtelStatusCode
       - BackupAttrOtelStatusDescription
+      - BackupAttrTargetName
+      - BackupAttrTargetType
+      - BackupAttrTargetURL
 
   securitySchemes:
     # note that we could explicitly use the "type: oauth2" with flows, but that would
