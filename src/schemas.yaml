@@ -369,6 +369,149 @@ components:
       type: object
       properties: {}
 
+    # ---------------------------------------------------------------------------
+    # Backup Trace Semantic Convention
+    # ---------------------------------------------------------------------------
+    # These types define the agreed-upon OTEL span names and attribute keys that
+    # backup engines MUST emit and that the cloud service uses to derive
+    # BackupTimelineEvent records from stored OpenTelemetry spans.
+    # ---------------------------------------------------------------------------
+
+    BackupSpanName:
+      type: string
+      description: |
+        Recommended OTEL span names for backup engine traces.
+        Engines MUST use one of these names when creating spans for a backup run.
+        Each span name corresponds to a distinct phase in the backup lifecycle.
+      enum:
+      - run
+      - connect
+      - snapshot
+      - dump
+      - upload
+      - verify
+      - cleanup
+      x-enum-varnames:
+      - BackupSpanRun
+      - BackupSpanConnect
+      - BackupSpanSnapshot
+      - BackupSpanDump
+      - BackupSpanUpload
+      - BackupSpanVerify
+      - BackupSpanCleanup
+
+    BackupPhase:
+      type: string
+      description: |
+        Value for the backup.phase span attribute.
+        Indicates which phase of the backup this span represents.
+        "complete" is used only on the root "run" span once the entire backup finishes.
+      enum:
+      - run
+      - connect
+      - snapshot
+      - dump
+      - upload
+      - verify
+      - cleanup
+      - complete
+      x-enum-varnames:
+      - BackupPhaseRun
+      - BackupPhaseConnect
+      - BackupPhaseSnapshot
+      - BackupPhaseDump
+      - BackupPhaseUpload
+      - BackupPhaseVerify
+      - BackupPhaseCleanup
+      - BackupPhaseComplete
+
+    BackupStatus:
+      type: string
+      description: |
+        Value for the backup.status span attribute.
+        Indicates the outcome of a span or phase.
+        "running" is set when the span begins; "ok" or "error" when it ends.
+      enum:
+      - running
+      - ok
+      - error
+      x-enum-varnames:
+      - BackupStatusRunning
+      - BackupStatusOK
+      - BackupStatusError
+
+    OtelStatusCode:
+      type: string
+      description: |
+        OTEL span status code per the OpenTelemetry specification.
+        Set via the otel.status_code span attribute.
+        "ERROR" should be accompanied by otel.status_description.
+      enum:
+      - OK
+      - ERROR
+      - UNSET
+      x-enum-varnames:
+      - OtelStatusCodeOK
+      - OtelStatusCodeError
+      - OtelStatusCodeUnset
+
+    BackupAttributeKey:
+      type: string
+      description: |
+        Stable OTEL span attribute key names for backup engine traces.
+        These are the agreed-upon attribute keys that engines MUST emit on each
+        relevant span, and that the cloud service uses to derive
+        BackupTimelineEvent records.
+
+        Attribute key reference:
+          backup.run_id           — stable UUID identifying the backup run
+          backup.phase            — one of the BackupPhase enum values
+          backup.status           — one of the BackupStatus enum values
+          backup.bytes            — bytes processed in this phase (when applicable)
+          backup.object_count     — objects (tables/files) processed (when applicable)
+          backup.exit_code        — engine process/result exit code (when applicable)
+          backup.event.label      — optional short user-facing label
+          backup.event.message    — optional user-facing status or error message
+          db.system               — database system (e.g. postgresql, mysql) per OTEL semconv
+          db.name                 — name of the database being backed up
+          network.transport       — transport protocol per OTEL semconv (e.g. tcp)
+          server.address          — hostname/IP of the database server
+          server.port             — port number of the database server
+          otel.status_code        — OTEL span status: OK, ERROR, or UNSET
+          otel.status_description — human-readable status description, set on error
+      enum:
+      - backup.run_id
+      - backup.phase
+      - backup.status
+      - backup.bytes
+      - backup.object_count
+      - backup.exit_code
+      - backup.event.label
+      - backup.event.message
+      - db.system
+      - db.name
+      - network.transport
+      - server.address
+      - server.port
+      - otel.status_code
+      - otel.status_description
+      x-enum-varnames:
+      - BackupAttrRunID
+      - BackupAttrPhase
+      - BackupAttrStatus
+      - BackupAttrBytes
+      - BackupAttrObjectCount
+      - BackupAttrExitCode
+      - BackupAttrEventLabel
+      - BackupAttrEventMessage
+      - BackupAttrDBSystem
+      - BackupAttrDBName
+      - BackupAttrNetworkTransport
+      - BackupAttrServerAddress
+      - BackupAttrServerPort
+      - BackupAttrOtelStatusCode
+      - BackupAttrOtelStatusDescription
+
   securitySchemes:
     # note that we could explicitly use the "type: oauth2" with flows, but that would
     # require stating the endpoints, which are an implementation detail, and would not
