@@ -50,20 +50,41 @@ The Go types for all names and keys below are generated from [`schemas.yaml`](./
 
 ### Span Names
 
-Each phase of a backup run is represented by a single OTEL span. The span name MUST be one of the
-`BackupSpanName` enum values:
+Each phase of a backup or restore run is represented by a single OTEL span. The span name MUST be one
+of the `BackupSpanName` enum values. For prune-target spans the full emitted name is `pruneTarget <url>`;
+the constant `BackupSpanPruneTarget` holds the static prefix `"pruneTarget"`.
 
-| Span name  | Go constant          | Description                                         |
-|------------|----------------------|-----------------------------------------------------|
-| `run`      | `BackupSpanRun`      | Root span covering the full backup run              |
-| `connect`  | `BackupSpanConnect`  | Establishing the database connection                |
-| `snapshot` | `BackupSpanSnapshot` | Creating a consistent snapshot / transaction        |
-| `dump`     | `BackupSpanDump`     | Serialising / dumping database data                 |
-| `upload`   | `BackupSpanUpload`   | Uploading the backup artifact to the target         |
-| `verify`   | `BackupSpanVerify`   | Verifying the uploaded artifact                     |
-| `cleanup`  | `BackupSpanCleanup`  | Removing temporary files and releasing resources    |
+#### Backup spans
 
-All phase spans MUST be children of the root `run` span. The `run` span starts when the backup begins
+| Span name         | Go constant               | Description                                              |
+|-------------------|---------------------------|----------------------------------------------------------|
+| `run`             | `BackupSpanRun`           | Root span covering the full backup run                   |
+| `startup`         | `BackupSpanStartup`       | Engine initialisation before any backup work begins      |
+| `connect`         | `BackupSpanConnect`       | Establishing the database connection                     |
+| `snapshot`        | `BackupSpanSnapshot`      | Creating a consistent snapshot / transaction             |
+| `database_dump`   | `BackupSpanDatabaseDump`  | Low-level database dump step                             |
+| `dump`            | `BackupSpanDump`          | High-level serialisation / dump phase                    |
+| `output_tar`      | `BackupSpanOutputTar`     | Assembling the output tar archive                        |
+| `pre-backup`      | `BackupSpanPreBackup`     | Running pre-backup scripts                               |
+| `post-backup`     | `BackupSpanPostBackup`    | Running post-backup scripts                              |
+| `upload`          | `BackupSpanUpload`        | Uploading the backup artifact to a target                |
+| `verify`          | `BackupSpanVerify`        | Verifying the uploaded artifact                          |
+| `cleanup`         | `BackupSpanCleanup`       | Removing temporary files and releasing resources         |
+| `prune`           | `BackupSpanPrune`         | Evaluating and executing retention pruning               |
+| `pruneTarget`     | `BackupSpanPruneTarget`   | Pruning a single target; full span name is `pruneTarget <url>` |
+
+#### Restore spans
+
+| Span name          | Go constant                 | Description                                             |
+|--------------------|-----------------------------|---------------------------------------------------------|
+| `pre-restore`      | `BackupSpanPreRestore`      | Running pre-restore scripts                             |
+| `post-restore`     | `BackupSpanPostRestore`     | Running post-restore scripts                            |
+| `restore`          | `BackupSpanRestore`         | High-level restore phase                                |
+| `pull file`        | `BackupSpanPullFile`        | Fetching the backup artifact from the target            |
+| `input_tar`        | `BackupSpanInputTar`        | Extracting the input tar archive                        |
+| `database_restore` | `BackupSpanDatabaseRestore` | Low-level database restore step                         |
+
+All phase spans MUST be children of the root `run` span. The `run` span starts when the engine begins
 and ends only after all child spans have completed.
 
 ---
@@ -116,6 +137,28 @@ Credentials, access keys, tokens, signed URLs, and any other secrets MUST NOT ap
 | `backup.target.name`   | `BackupAttrTargetName`   | string | MUST     | Target key/name from the engine config, e.g. `local-dev`, `daily-s3`, `archive`                        |
 | `backup.target.type`   | `BackupAttrTargetType`   | string | MUST     | Target type matching the engine config: `file`, `s3`, or `smb`                                          |
 | `backup.target.url`    | `BackupAttrTargetURL`    | string | MUST     | Safe display URL identifying the destination, e.g. `file:///var/lib/databacker/backups`, `s3://bucket/path`, `smb://server/share/path`. No secrets. |
+
+#### Engine-observed diagnostic attributes
+
+These attributes are emitted by the engine on various spans to record diagnostic detail. They are
+**not required on every span**; engines SHOULD emit them on the spans where they are naturally
+available. The cloud service MAY surface them in timeline or log views.
+
+| Attribute key        | Go constant                    | Type           | Typical span(s)                        | Description                                                        |
+|----------------------|--------------------------------|----------------|----------------------------------------|--------------------------------------------------------------------||
+| `timestamp`          | `BackupAttrTimestamp`          | string         | any                                    | ISO 8601/RFC 3339 timestamp recorded by the engine within a span   |
+| `source-filename`    | `BackupAttrSourceFilename`     | string         | `pull file`, `input_tar`, `restore`    | Source file path being read or processed                           |
+| `target-filename`    | `BackupAttrTargetFilename`     | string         | `output_tar`, `upload`                 | Destination file path being written                                |
+| `provided-schemas`   | `BackupAttrProvidedSchemas`    | string         | `database_dump`, `database_restore`    | Schema list supplied to the operation                              |
+| `actual-schemas`     | `BackupAttrActualSchemas`      | string         | `database_dump`, `database_restore`    | Schema list actually found or used                                 |
+| `copied`             | `BackupAttrCopied`             | integer/string | `upload`, `restore`                    | Count of items (rows, files, bytes) copied                         |
+| `target`             | `BackupAttrTarget`             | string         | `upload`, `prune`, `pruneTarget`       | Generic target identifier string for the current operation         |
+| `targetfile`         | `BackupAttrTargetFile`         | string         | `upload`, `output_tar`                 | File path of the current target artifact                           |
+| `tmpfile`            | `BackupAttrTmpFile`            | string         | `database_dump`, `output_tar`          | Path of a temporary file used during the operation                 |
+| `files`              | `BackupAttrFiles`              | integer/string | `output_tar`, `input_tar`, `cleanup`   | Count or list of files involved in the operation                   |
+| `candidates`         | `BackupAttrCandidates`         | integer/string | `prune`, `pruneTarget`                 | Count or list of prune/restore candidates evaluated                |
+| `ignored`            | `BackupAttrIgnored`            | integer/string | `prune`, `pruneTarget`                 | Count or list of items skipped or ignored                          |
+| `invalidDate`        | `BackupAttrInvalidDate`        | string         | `prune`, `pruneTarget`                 | A date value that failed validation during prune evaluation        |
 
 #### Attributes on the root `run` span only
 

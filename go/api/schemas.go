@@ -5,47 +5,86 @@ package api
 
 // Defines values for BackupAttributeKey.
 const (
+	BackupAttrActualSchemas         BackupAttributeKey = "actual-schemas"
 	BackupAttrBytes                 BackupAttributeKey = "backup.bytes"
+	BackupAttrCandidates            BackupAttributeKey = "candidates"
+	BackupAttrCopied                BackupAttributeKey = "copied"
 	BackupAttrDBName                BackupAttributeKey = "db.name"
 	BackupAttrDBSystem              BackupAttributeKey = "db.system"
 	BackupAttrEventLabel            BackupAttributeKey = "backup.event.label"
 	BackupAttrEventMessage          BackupAttributeKey = "backup.event.message"
 	BackupAttrExitCode              BackupAttributeKey = "backup.exit_code"
+	BackupAttrFiles                 BackupAttributeKey = "files"
+	BackupAttrIgnored               BackupAttributeKey = "ignored"
+	BackupAttrInvalidDate           BackupAttributeKey = "invalidDate"
 	BackupAttrNetworkTransport      BackupAttributeKey = "network.transport"
 	BackupAttrObjectCount           BackupAttributeKey = "backup.object_count"
 	BackupAttrOtelStatusCode        BackupAttributeKey = "otel.status_code"
 	BackupAttrOtelStatusDescription BackupAttributeKey = "otel.status_description"
 	BackupAttrPhase                 BackupAttributeKey = "backup.phase"
+	BackupAttrProvidedSchemas       BackupAttributeKey = "provided-schemas"
 	BackupAttrRunID                 BackupAttributeKey = "backup.run_id"
 	BackupAttrServerAddress         BackupAttributeKey = "server.address"
 	BackupAttrServerPort            BackupAttributeKey = "server.port"
+	BackupAttrSourceFilename        BackupAttributeKey = "source-filename"
 	BackupAttrStatus                BackupAttributeKey = "backup.status"
+	BackupAttrTarget                BackupAttributeKey = "target"
+	BackupAttrTargetFile            BackupAttributeKey = "targetfile"
+	BackupAttrTargetFilename        BackupAttributeKey = "target-filename"
 	BackupAttrTargetName            BackupAttributeKey = "backup.target.name"
 	BackupAttrTargetType            BackupAttributeKey = "backup.target.type"
 	BackupAttrTargetURL             BackupAttributeKey = "backup.target.url"
+	BackupAttrTimestamp             BackupAttributeKey = "timestamp"
+	BackupAttrTmpFile               BackupAttributeKey = "tmpfile"
 )
 
 // Defines values for BackupPhase.
 const (
-	BackupPhaseCleanup  BackupPhase = "cleanup"
-	BackupPhaseComplete BackupPhase = "complete"
-	BackupPhaseConnect  BackupPhase = "connect"
-	BackupPhaseDump     BackupPhase = "dump"
-	BackupPhaseRun      BackupPhase = "run"
-	BackupPhaseSnapshot BackupPhase = "snapshot"
-	BackupPhaseUpload   BackupPhase = "upload"
-	BackupPhaseVerify   BackupPhase = "verify"
+	BackupPhaseCleanup         BackupPhase = "cleanup"
+	BackupPhaseComplete        BackupPhase = "complete"
+	BackupPhaseConnect         BackupPhase = "connect"
+	BackupPhaseDatabaseDump    BackupPhase = "database_dump"
+	BackupPhaseDatabaseRestore BackupPhase = "database_restore"
+	BackupPhaseDump            BackupPhase = "dump"
+	BackupPhaseInputTar        BackupPhase = "input_tar"
+	BackupPhaseOutputTar       BackupPhase = "output_tar"
+	BackupPhasePostBackup      BackupPhase = "post-backup"
+	BackupPhasePostRestore     BackupPhase = "post-restore"
+	BackupPhasePreBackup       BackupPhase = "pre-backup"
+	BackupPhasePreRestore      BackupPhase = "pre-restore"
+	BackupPhasePrune           BackupPhase = "prune"
+	BackupPhasePruneTarget     BackupPhase = "pruneTarget"
+	BackupPhasePullFile        BackupPhase = "pull file"
+	BackupPhaseRestore         BackupPhase = "restore"
+	BackupPhaseRun             BackupPhase = "run"
+	BackupPhaseSnapshot        BackupPhase = "snapshot"
+	BackupPhaseStartup         BackupPhase = "startup"
+	BackupPhaseUpload          BackupPhase = "upload"
+	BackupPhaseVerify          BackupPhase = "verify"
 )
 
 // Defines values for BackupSpanName.
 const (
-	BackupSpanCleanup  BackupSpanName = "cleanup"
-	BackupSpanConnect  BackupSpanName = "connect"
-	BackupSpanDump     BackupSpanName = "dump"
-	BackupSpanRun      BackupSpanName = "run"
-	BackupSpanSnapshot BackupSpanName = "snapshot"
-	BackupSpanUpload   BackupSpanName = "upload"
-	BackupSpanVerify   BackupSpanName = "verify"
+	BackupSpanCleanup         BackupSpanName = "cleanup"
+	BackupSpanConnect         BackupSpanName = "connect"
+	BackupSpanDatabaseDump    BackupSpanName = "database_dump"
+	BackupSpanDatabaseRestore BackupSpanName = "database_restore"
+	BackupSpanDump            BackupSpanName = "dump"
+	BackupSpanInputTar        BackupSpanName = "input_tar"
+	BackupSpanOutputTar       BackupSpanName = "output_tar"
+	BackupSpanPostBackup      BackupSpanName = "post-backup"
+	BackupSpanPostRestore     BackupSpanName = "post-restore"
+	BackupSpanPreBackup       BackupSpanName = "pre-backup"
+	BackupSpanPreRestore      BackupSpanName = "pre-restore"
+	BackupSpanPrune           BackupSpanName = "prune"
+	BackupSpanPruneTarget     BackupSpanName = "pruneTarget"
+	BackupSpanPullFile        BackupSpanName = "pull file"
+	BackupSpanRestore         BackupSpanName = "restore"
+	BackupSpanRun             BackupSpanName = "run"
+	BackupSpanSnapshot        BackupSpanName = "snapshot"
+	BackupSpanStartup         BackupSpanName = "startup"
+	BackupSpanUpload          BackupSpanName = "upload"
+	BackupSpanVerify          BackupSpanName = "verify"
 )
 
 // Defines values for BackupStatus.
@@ -141,16 +180,36 @@ const (
 //	                          "s3://bucket/path", "smb://server/share/path".
 //	                          MUST NOT contain credentials, access keys, tokens,
 //	                          signed URLs, or any other secrets.
+//
+//	Engine-observed diagnostic attributes (various spans):
+//	timestamp               — ISO 8601 / RFC 3339 timestamp recorded by the engine within a span
+//	source-filename         — source file path being read or processed
+//	target-filename         — destination file path being written
+//	provided-schemas        — schema list supplied to the operation (string or JSON array)
+//	actual-schemas          — schema list actually found or used (string or JSON array)
+//	copied                  — number of items (rows, files, bytes) copied in the span
+//	target                  — generic target identifier string for the current operation
+//	targetfile              — file path of the current target artifact
+//	tmpfile                 — path of a temporary file used during the operation
+//	files                   — count or list of files involved in the operation
+//	candidates              — count or list of prune/restore candidates evaluated
+//	ignored                 — count or list of items skipped or ignored
+//	invalidDate             — a date value that failed validation during prune evaluation
 type BackupAttributeKey string
 
 // BackupPhase Value for the backup.phase span attribute.
-// Indicates which phase of the backup this span represents.
-// "complete" is used only on the root "run" span once the entire backup finishes.
+// Indicates which phase of the backup or restore this span represents.
+// "complete" is used only on the root "run" span once all phases finish.
+// For prune-target spans, use "pruneTarget" regardless of the dynamic span name suffix.
 type BackupPhase string
 
-// BackupSpanName Recommended OTEL span names for backup engine traces.
-// Engines MUST use one of these names when creating spans for a backup run.
-// Each span name corresponds to a distinct phase in the backup lifecycle.
+// BackupSpanName Stable OTEL span names for backup and restore engine traces.
+// Engines MUST use one of these names when creating spans.
+// Each span name corresponds to a distinct phase in the backup/restore lifecycle.
+//
+// Note: prune-target spans are dynamic. The emitted span name is
+// "pruneTarget <url>" where <url> is the target URL. The constant
+// BackupSpanPruneTarget holds the static prefix "pruneTarget".
 type BackupSpanName string
 
 // BackupStatus Value for the backup.status span attribute.

@@ -380,9 +380,13 @@ components:
     BackupSpanName:
       type: string
       description: |
-        Recommended OTEL span names for backup engine traces.
-        Engines MUST use one of these names when creating spans for a backup run.
-        Each span name corresponds to a distinct phase in the backup lifecycle.
+        Stable OTEL span names for backup and restore engine traces.
+        Engines MUST use one of these names when creating spans.
+        Each span name corresponds to a distinct phase in the backup/restore lifecycle.
+
+        Note: prune-target spans are dynamic. The emitted span name is
+        "pruneTarget <url>" where <url> is the target URL. The constant
+        BackupSpanPruneTarget holds the static prefix "pruneTarget".
       enum:
       - run
       - connect
@@ -391,6 +395,19 @@ components:
       - upload
       - verify
       - cleanup
+      - startup
+      - database_dump
+      - output_tar
+      - pre-backup
+      - post-backup
+      - pre-restore
+      - post-restore
+      - restore
+      - pull file
+      - input_tar
+      - database_restore
+      - prune
+      - pruneTarget
       x-enum-varnames:
       - BackupSpanRun
       - BackupSpanConnect
@@ -399,13 +416,27 @@ components:
       - BackupSpanUpload
       - BackupSpanVerify
       - BackupSpanCleanup
+      - BackupSpanStartup
+      - BackupSpanDatabaseDump
+      - BackupSpanOutputTar
+      - BackupSpanPreBackup
+      - BackupSpanPostBackup
+      - BackupSpanPreRestore
+      - BackupSpanPostRestore
+      - BackupSpanRestore
+      - BackupSpanPullFile
+      - BackupSpanInputTar
+      - BackupSpanDatabaseRestore
+      - BackupSpanPrune
+      - BackupSpanPruneTarget
 
     BackupPhase:
       type: string
       description: |
         Value for the backup.phase span attribute.
-        Indicates which phase of the backup this span represents.
-        "complete" is used only on the root "run" span once the entire backup finishes.
+        Indicates which phase of the backup or restore this span represents.
+        "complete" is used only on the root "run" span once all phases finish.
+        For prune-target spans, use "pruneTarget" regardless of the dynamic span name suffix.
       enum:
       - run
       - connect
@@ -415,6 +446,19 @@ components:
       - verify
       - cleanup
       - complete
+      - startup
+      - database_dump
+      - output_tar
+      - pre-backup
+      - post-backup
+      - pre-restore
+      - post-restore
+      - restore
+      - pull file
+      - input_tar
+      - database_restore
+      - prune
+      - pruneTarget
       x-enum-varnames:
       - BackupPhaseRun
       - BackupPhaseConnect
@@ -424,6 +468,19 @@ components:
       - BackupPhaseVerify
       - BackupPhaseCleanup
       - BackupPhaseComplete
+      - BackupPhaseStartup
+      - BackupPhaseDatabaseDump
+      - BackupPhaseOutputTar
+      - BackupPhasePreBackup
+      - BackupPhasePostBackup
+      - BackupPhasePreRestore
+      - BackupPhasePostRestore
+      - BackupPhaseRestore
+      - BackupPhasePullFile
+      - BackupPhaseInputTar
+      - BackupPhaseDatabaseRestore
+      - BackupPhasePrune
+      - BackupPhasePruneTarget
 
     BackupStatus:
       type: string
@@ -488,6 +545,21 @@ components:
                                     "s3://bucket/path", "smb://server/share/path".
                                     MUST NOT contain credentials, access keys, tokens,
                                     signed URLs, or any other secrets.
+
+          Engine-observed diagnostic attributes (various spans):
+          timestamp               — ISO 8601 / RFC 3339 timestamp recorded by the engine within a span
+          source-filename         — source file path being read or processed
+          target-filename         — destination file path being written
+          provided-schemas        — schema list supplied to the operation (string or JSON array)
+          actual-schemas          — schema list actually found or used (string or JSON array)
+          copied                  — number of items (rows, files, bytes) copied in the span
+          target                  — generic target identifier string for the current operation
+          targetfile              — file path of the current target artifact
+          tmpfile                 — path of a temporary file used during the operation
+          files                   — count or list of files involved in the operation
+          candidates              — count or list of prune/restore candidates evaluated
+          ignored                 — count or list of items skipped or ignored
+          invalidDate             — a date value that failed validation during prune evaluation
       enum:
       - backup.run_id
       - backup.phase
@@ -507,6 +579,19 @@ components:
       - backup.target.name
       - backup.target.type
       - backup.target.url
+      - timestamp
+      - source-filename
+      - target-filename
+      - provided-schemas
+      - actual-schemas
+      - copied
+      - target
+      - targetfile
+      - tmpfile
+      - files
+      - candidates
+      - ignored
+      - invalidDate
       x-enum-varnames:
       - BackupAttrRunID
       - BackupAttrPhase
@@ -526,6 +611,19 @@ components:
       - BackupAttrTargetName
       - BackupAttrTargetType
       - BackupAttrTargetURL
+      - BackupAttrTimestamp
+      - BackupAttrSourceFilename
+      - BackupAttrTargetFilename
+      - BackupAttrProvidedSchemas
+      - BackupAttrActualSchemas
+      - BackupAttrCopied
+      - BackupAttrTarget
+      - BackupAttrTargetFile
+      - BackupAttrTmpFile
+      - BackupAttrFiles
+      - BackupAttrCandidates
+      - BackupAttrIgnored
+      - BackupAttrInvalidDate
 
   securitySchemes:
     # note that we could explicitly use the "type: oauth2" with flows, but that would
