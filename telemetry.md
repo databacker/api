@@ -121,14 +121,15 @@ The following attributes MUST or SHOULD be set on spans. Attribute key constants
 These attributes describe the logical scope of the data being protected and provide a stable
 identity for the protected target. Engines SHOULD emit them on every database-related span.
 
-| Attribute key                              | Go constant                              | Type    | Required | Description                                                                                                                                                                                                           |
-|--------------------------------------------|------------------------------------------|---------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `backup.protected_target.scope`            | `BackupAttrProtectedTargetScope`         | string  | SHOULD   | One of `selected_databases`, `whole_server`, or `unknown`. Describes whether the engine is protecting a named subset of databases or the entire server/cluster.                                                       |
-| `backup.protected_target.identity`         | `BackupAttrProtectedTargetIdentity`      | string  | SHOULD   | Engine-computed, deterministic string that stably identifies this protected target across runs. Derived from `db.system`, the protected scope, `db.server.native_id` or `db.provider.resource_id` when available, and sorted scope members for `selected_databases` scope. |
-| `backup.protected_target.database_count`   | `BackupAttrProtectedTargetDatabaseCount` | integer | SHOULD   | Number of logical databases in scope. MAY be present even when the full database list is omitted or truncated.                                                                                                        |
-| `backup.protected_target.databases`        | `BackupAttrProtectedTargetDatabases`     | string  | SHOULD   | JSON array of logical database names included in the backup scope when known. Use stable (sorted) ordering. MAY be omitted or truncated for `whole_server` backups with a very large number of databases.             |
-| `db.server.native_id`                      | `BackupAttrDBServerNativeID`             | string  | SHOULD   | DB-native server or cluster identifier, stable across server restarts. Examples: PostgreSQL `system_identifier` from `pg_control`; MySQL `@@global.server_uuid`.                                                     |
-| `db.provider.resource_id`                  | `BackupAttrDBProviderResourceID`         | string  | SHOULD   | Managed-service resource identity assigned by the cloud provider. Examples: AWS RDS ARN (`arn:aws:rds:…`); Cloud SQL resource name (`projects/…/instances/…`). Omit for self-managed servers.                        |
+| Attribute key                                       | Go constant                                     | Type    | Required | Description                                                                                                                                                                                                                   |
+|-----------------------------------------------------|-------------------------------------------------|---------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `backup.protected_target.selection_mode`            | `BackupAttrProtectedTargetSelectionMode`        | string  | SHOULD   | One of `all`, `include`, or `exclude`. Describes how databases are selected: `all` = entire server/cluster; `include` = named subset; `exclude` = all except named subset.                                                    |
+| `backup.protected_target.identity`                  | `BackupAttrProtectedTargetIdentity`             | string  | SHOULD   | Engine-computed, deterministic string that stably identifies this protected target across runs. Derived from `db.system`, the selection mode, `db.server.native_id` or `db.provider.resource_id` when available, and sorted configured members for `include`/`exclude` modes. |
+| `backup.protected_target.database_count`            | `BackupAttrProtectedTargetDatabaseCount`        | integer | SHOULD   | Number of logical databases actually in scope. MAY be present even when the full database list is omitted or truncated.                                                                                                        |
+| `backup.protected_target.configured_databases`      | `BackupAttrProtectedTargetConfiguredDatabases`  | string  | SHOULD   | JSON array of database names from the engine config: the include list (for `include` mode) or the exclude list (for `exclude` mode). Sorted ordering. Has no meaning for `all` mode.                                          |
+| `backup.protected_target.databases`                 | `BackupAttrProtectedTargetDatabases`            | string  | SHOULD   | JSON array of logical database names actually backed up, when known. Sorted ordering. MAY be omitted or truncated for `all` mode with a very large number of databases.                                                        |
+| `db.server.native_id`                               | `BackupAttrDBServerNativeID`                    | string  | SHOULD   | DB-native server or cluster identifier, stable across server restarts. Examples: PostgreSQL `system_identifier` from `pg_control`; MySQL `@@global.server_uuid`.                                                              |
+| `db.provider.resource_id`                           | `BackupAttrDBProviderResourceID`                | string  | SHOULD   | Managed-service resource identity assigned by the cloud provider. Examples: AWS RDS ARN (`arn:aws:rds:…`); Cloud SQL resource name (`projects/…/instances/…`). Omit for self-managed servers.                                 |
 
 #### Attributes on data-volume spans (`dump`, `upload`, `verify`)
 
@@ -388,18 +389,19 @@ for _, t := range targets {
 
 // Protected target identity — emit on connect/snapshot/dump spans
 span.SetAttributes(
-    attribute.String(string(api.BackupAttrProtectedTargetScope),    string(api.BackupProtectedTargetScopeSelectedDatabases)),
-    attribute.String(string(api.BackupAttrProtectedTargetIdentity), protectedTargetID),      // engine-computed deterministic string
+    attribute.String(string(api.BackupAttrProtectedTargetSelectionMode), string(api.BackupProtectedTargetSelectionModeInclude)),
+    attribute.String(string(api.BackupAttrProtectedTargetIdentity), protectedTargetID),          // engine-computed deterministic string
     attribute.Int(   string(api.BackupAttrProtectedTargetDatabaseCount), len(dbNames)),
-    attribute.String(string(api.BackupAttrProtectedTargetDatabases), `["myapp","analytics"]`), // sorted JSON array
-    attribute.String(string(api.BackupAttrDBServerNativeID),        serverNativeID),           // e.g. PostgreSQL system_identifier
-    // attribute.String(string(api.BackupAttrDBProviderResourceID), providerResourceID),       // set only for managed services
+    attribute.String(string(api.BackupAttrProtectedTargetConfiguredDatabases), `["myapp","analytics"]`), // sorted JSON array of configured databases
+    attribute.String(string(api.BackupAttrProtectedTargetDatabases), `["myapp","analytics"]`),   // sorted JSON array of actually backed-up databases
+    attribute.String(string(api.BackupAttrDBServerNativeID),        serverNativeID),              // e.g. PostgreSQL system_identifier
+    // attribute.String(string(api.BackupAttrDBProviderResourceID), providerResourceID),          // set only for managed services
 )
 ```
 
 ---
 
-### Protected target scope examples
+### Protected target selection mode examples
 
 These examples show the `dump` span for four representative backup configurations.
 All examples are children of a root `run` span (omitted for brevity).
@@ -407,7 +409,7 @@ All examples are children of a root `run` span (omitted for brevity).
 #### Single database backup
 
 The engine is configured to back up one named database (`myapp`) on a self-managed PostgreSQL server.
-`backup.protected_target.scope` is `selected_databases`; `db.server.native_id` carries the
+`backup.protected_target.selection_mode` is `include`; `db.server.native_id` carries the
 PostgreSQL `system_identifier`.
 
 ```json
@@ -420,23 +422,24 @@ PostgreSQL `system_identifier`.
   "endTimeUnixNano":   "1715000120000000000",
   "status": { "code": "STATUS_CODE_OK" },
   "attributes": [
-    { "key": "backup.run_id",                              "value": { "stringValue": "550e8400-e29b-41d4-a716-446655440000" } },
-    { "key": "backup.phase",                               "value": { "stringValue": "dump" } },
-    { "key": "backup.status",                              "value": { "stringValue": "ok" } },
-    { "key": "db.system",                                  "value": { "stringValue": "postgresql" } },
-    { "key": "db.name",                                    "value": { "stringValue": "myapp" } },
-    { "key": "server.address",                             "value": { "stringValue": "db.internal" } },
-    { "key": "server.port",                                "value": { "intValue": "5432" } },
-    { "key": "network.transport",                          "value": { "stringValue": "tcp" } },
-    { "key": "backup.protected_target.scope",              "value": { "stringValue": "selected_databases" } },
-    { "key": "backup.protected_target.identity",           "value": { "stringValue": "postgresql:selected:7257959620975521923:myapp" } },
-    { "key": "backup.protected_target.database_count",     "value": { "intValue": "1" } },
-    { "key": "backup.protected_target.databases",          "value": { "stringValue": "[\"myapp\"]" } },
-    { "key": "db.server.native_id",                        "value": { "stringValue": "7257959620975521923" } },
-    { "key": "backup.bytes",                               "value": { "intValue": "104857600" } },
-    { "key": "backup.object_count",                        "value": { "intValue": "42" } },
-    { "key": "backup.event.label",                         "value": { "stringValue": "Dump complete" } },
-    { "key": "otel.status_code",                           "value": { "stringValue": "OK" } }
+    { "key": "backup.run_id",                                    "value": { "stringValue": "550e8400-e29b-41d4-a716-446655440000" } },
+    { "key": "backup.phase",                                     "value": { "stringValue": "dump" } },
+    { "key": "backup.status",                                    "value": { "stringValue": "ok" } },
+    { "key": "db.system",                                        "value": { "stringValue": "postgresql" } },
+    { "key": "db.name",                                          "value": { "stringValue": "myapp" } },
+    { "key": "server.address",                                   "value": { "stringValue": "db.internal" } },
+    { "key": "server.port",                                      "value": { "intValue": "5432" } },
+    { "key": "network.transport",                                "value": { "stringValue": "tcp" } },
+    { "key": "backup.protected_target.selection_mode",           "value": { "stringValue": "include" } },
+    { "key": "backup.protected_target.identity",                 "value": { "stringValue": "postgresql:include:7257959620975521923:myapp" } },
+    { "key": "backup.protected_target.database_count",           "value": { "intValue": "1" } },
+    { "key": "backup.protected_target.configured_databases",     "value": { "stringValue": "[\"myapp\"]" } },
+    { "key": "backup.protected_target.databases",                "value": { "stringValue": "[\"myapp\"]" } },
+    { "key": "db.server.native_id",                              "value": { "stringValue": "7257959620975521923" } },
+    { "key": "backup.bytes",                                     "value": { "intValue": "104857600" } },
+    { "key": "backup.object_count",                              "value": { "intValue": "42" } },
+    { "key": "backup.event.label",                               "value": { "stringValue": "Dump complete" } },
+    { "key": "otel.status_code",                                 "value": { "stringValue": "OK" } }
   ]
 }
 ```
@@ -455,28 +458,29 @@ The engine is configured to back up two named databases on the same server.
   "endTimeUnixNano":   "1715001190000000000",
   "status": { "code": "STATUS_CODE_OK" },
   "attributes": [
-    { "key": "backup.run_id",                              "value": { "stringValue": "661f9511-f30c-52e5-b827-557766551111" } },
-    { "key": "backup.phase",                               "value": { "stringValue": "dump" } },
-    { "key": "backup.status",                              "value": { "stringValue": "ok" } },
-    { "key": "db.system",                                  "value": { "stringValue": "postgresql" } },
-    { "key": "db.name",                                    "value": { "stringValue": "analytics" } },
-    { "key": "server.address",                             "value": { "stringValue": "db.internal" } },
-    { "key": "server.port",                                "value": { "intValue": "5432" } },
-    { "key": "network.transport",                          "value": { "stringValue": "tcp" } },
-    { "key": "backup.protected_target.scope",              "value": { "stringValue": "selected_databases" } },
-    { "key": "backup.protected_target.identity",           "value": { "stringValue": "postgresql:selected:7257959620975521923:analytics:myapp" } },
-    { "key": "backup.protected_target.database_count",     "value": { "intValue": "2" } },
-    { "key": "backup.protected_target.databases",          "value": { "stringValue": "[\"analytics\",\"myapp\"]" } },
-    { "key": "db.server.native_id",                        "value": { "stringValue": "7257959620975521923" } },
-    { "key": "backup.bytes",                               "value": { "intValue": "209715200" } },
-    { "key": "backup.object_count",                        "value": { "intValue": "87" } },
-    { "key": "backup.event.label",                         "value": { "stringValue": "Dump complete" } },
-    { "key": "otel.status_code",                           "value": { "stringValue": "OK" } }
+    { "key": "backup.run_id",                                    "value": { "stringValue": "661f9511-f30c-52e5-b827-557766551111" } },
+    { "key": "backup.phase",                                     "value": { "stringValue": "dump" } },
+    { "key": "backup.status",                                    "value": { "stringValue": "ok" } },
+    { "key": "db.system",                                        "value": { "stringValue": "postgresql" } },
+    { "key": "db.name",                                          "value": { "stringValue": "analytics" } },
+    { "key": "server.address",                                   "value": { "stringValue": "db.internal" } },
+    { "key": "server.port",                                      "value": { "intValue": "5432" } },
+    { "key": "network.transport",                                "value": { "stringValue": "tcp" } },
+    { "key": "backup.protected_target.selection_mode",           "value": { "stringValue": "include" } },
+    { "key": "backup.protected_target.identity",                 "value": { "stringValue": "postgresql:include:7257959620975521923:analytics:myapp" } },
+    { "key": "backup.protected_target.database_count",           "value": { "intValue": "2" } },
+    { "key": "backup.protected_target.configured_databases",     "value": { "stringValue": "[\"analytics\",\"myapp\"]" } },
+    { "key": "backup.protected_target.databases",                "value": { "stringValue": "[\"analytics\",\"myapp\"]" } },
+    { "key": "db.server.native_id",                              "value": { "stringValue": "7257959620975521923" } },
+    { "key": "backup.bytes",                                     "value": { "intValue": "209715200" } },
+    { "key": "backup.object_count",                              "value": { "intValue": "87" } },
+    { "key": "backup.event.label",                               "value": { "stringValue": "Dump complete" } },
+    { "key": "otel.status_code",                                 "value": { "stringValue": "OK" } }
   ]
 }
 ```
 
-#### Whole server backup
+#### All databases backup
 
 The engine is configured to back up all databases on a MySQL server. Individual database names are
 reported at runtime; `db.server.native_id` carries the MySQL `server_uuid`.
@@ -491,23 +495,23 @@ reported at runtime; `db.server.native_id` carries the MySQL `server_uuid`.
   "endTimeUnixNano":   "1715002300000000000",
   "status": { "code": "STATUS_CODE_OK" },
   "attributes": [
-    { "key": "backup.run_id",                              "value": { "stringValue": "772g0622-g41d-63f6-c938-668877662222" } },
-    { "key": "backup.phase",                               "value": { "stringValue": "dump" } },
-    { "key": "backup.status",                              "value": { "stringValue": "ok" } },
-    { "key": "db.system",                                  "value": { "stringValue": "mysql" } },
-    { "key": "db.name",                                    "value": { "stringValue": "" } },
-    { "key": "server.address",                             "value": { "stringValue": "mysql.internal" } },
-    { "key": "server.port",                                "value": { "intValue": "3306" } },
-    { "key": "network.transport",                          "value": { "stringValue": "tcp" } },
-    { "key": "backup.protected_target.scope",              "value": { "stringValue": "whole_server" } },
-    { "key": "backup.protected_target.identity",           "value": { "stringValue": "mysql:whole_server:a1b2c3d4-e5f6-7890-abcd-ef1234567890" } },
-    { "key": "backup.protected_target.database_count",     "value": { "intValue": "5" } },
-    { "key": "backup.protected_target.databases",          "value": { "stringValue": "[\"app\",\"audit\",\"config\",\"reporting\",\"users\"]" } },
-    { "key": "db.server.native_id",                        "value": { "stringValue": "a1b2c3d4-e5f6-7890-abcd-ef1234567890" } },
-    { "key": "backup.bytes",                               "value": { "intValue": "524288000" } },
-    { "key": "backup.object_count",                        "value": { "intValue": "203" } },
-    { "key": "backup.event.label",                         "value": { "stringValue": "Dump complete" } },
-    { "key": "otel.status_code",                           "value": { "stringValue": "OK" } }
+    { "key": "backup.run_id",                                    "value": { "stringValue": "772g0622-g41d-63f6-c938-668877662222" } },
+    { "key": "backup.phase",                                     "value": { "stringValue": "dump" } },
+    { "key": "backup.status",                                    "value": { "stringValue": "ok" } },
+    { "key": "db.system",                                        "value": { "stringValue": "mysql" } },
+    { "key": "db.name",                                          "value": { "stringValue": "" } },
+    { "key": "server.address",                                   "value": { "stringValue": "mysql.internal" } },
+    { "key": "server.port",                                      "value": { "intValue": "3306" } },
+    { "key": "network.transport",                                "value": { "stringValue": "tcp" } },
+    { "key": "backup.protected_target.selection_mode",           "value": { "stringValue": "all" } },
+    { "key": "backup.protected_target.identity",                 "value": { "stringValue": "mysql:all:a1b2c3d4-e5f6-7890-abcd-ef1234567890" } },
+    { "key": "backup.protected_target.database_count",           "value": { "intValue": "5" } },
+    { "key": "backup.protected_target.databases",                "value": { "stringValue": "[\"app\",\"audit\",\"config\",\"reporting\",\"users\"]" } },
+    { "key": "db.server.native_id",                              "value": { "stringValue": "a1b2c3d4-e5f6-7890-abcd-ef1234567890" } },
+    { "key": "backup.bytes",                                     "value": { "intValue": "524288000" } },
+    { "key": "backup.object_count",                              "value": { "intValue": "203" } },
+    { "key": "backup.event.label",                               "value": { "stringValue": "Dump complete" } },
+    { "key": "otel.status_code",                                 "value": { "stringValue": "OK" } }
   ]
 }
 ```
@@ -528,24 +532,26 @@ the engine can retrieve `system_identifier` from the instance.
   "endTimeUnixNano":   "1715003200000000000",
   "status": { "code": "STATUS_CODE_OK" },
   "attributes": [
-    { "key": "backup.run_id",                              "value": { "stringValue": "883h1733-h52e-74g7-d049-779988773333" } },
-    { "key": "backup.phase",                               "value": { "stringValue": "dump" } },
-    { "key": "backup.status",                              "value": { "stringValue": "ok" } },
-    { "key": "db.system",                                  "value": { "stringValue": "postgresql" } },
-    { "key": "db.name",                                    "value": { "stringValue": "production" } },
-    { "key": "server.address",                             "value": { "stringValue": "mydb.cluster-abc123.us-east-1.rds.amazonaws.com" } },
-    { "key": "server.port",                                "value": { "intValue": "5432" } },
-    { "key": "network.transport",                          "value": { "stringValue": "tcp" } },
-    { "key": "backup.protected_target.scope",              "value": { "stringValue": "selected_databases" } },
-    { "key": "backup.protected_target.identity",           "value": { "stringValue": "postgresql:selected:arn:aws:rds:us-east-1:123456789012:db:mydb:production" } },
-    { "key": "backup.protected_target.database_count",     "value": { "intValue": "1" } },
-    { "key": "backup.protected_target.databases",          "value": { "stringValue": "[\"production\"]" } },
-    { "key": "db.provider.resource_id",                    "value": { "stringValue": "arn:aws:rds:us-east-1:123456789012:db:mydb" } },
-    { "key": "backup.bytes",                               "value": { "intValue": "2147483648" } },
-    { "key": "backup.object_count",                        "value": { "intValue": "312" } },
-    { "key": "backup.event.label",                         "value": { "stringValue": "Dump complete" } },
-    { "key": "otel.status_code",                           "value": { "stringValue": "OK" } }
+    { "key": "backup.run_id",                                    "value": { "stringValue": "883h1733-h52e-74g7-d049-779988773333" } },
+    { "key": "backup.phase",                                     "value": { "stringValue": "dump" } },
+    { "key": "backup.status",                                    "value": { "stringValue": "ok" } },
+    { "key": "db.system",                                        "value": { "stringValue": "postgresql" } },
+    { "key": "db.name",                                          "value": { "stringValue": "production" } },
+    { "key": "server.address",                                   "value": { "stringValue": "mydb.cluster-abc123.us-east-1.rds.amazonaws.com" } },
+    { "key": "server.port",                                      "value": { "intValue": "5432" } },
+    { "key": "network.transport",                                "value": { "stringValue": "tcp" } },
+    { "key": "backup.protected_target.selection_mode",           "value": { "stringValue": "include" } },
+    { "key": "backup.protected_target.identity",                 "value": { "stringValue": "postgresql:include:arn:aws:rds:us-east-1:123456789012:db:mydb:production" } },
+    { "key": "backup.protected_target.database_count",           "value": { "intValue": "1" } },
+    { "key": "backup.protected_target.configured_databases",     "value": { "stringValue": "[\"production\"]" } },
+    { "key": "backup.protected_target.databases",                "value": { "stringValue": "[\"production\"]" } },
+    { "key": "db.provider.resource_id",                          "value": { "stringValue": "arn:aws:rds:us-east-1:123456789012:db:mydb" } },
+    { "key": "backup.bytes",                                     "value": { "intValue": "2147483648" } },
+    { "key": "backup.object_count",                              "value": { "intValue": "312" } },
+    { "key": "backup.event.label",                               "value": { "stringValue": "Dump complete" } },
+    { "key": "otel.status_code",                                 "value": { "stringValue": "OK" } }
   ]
 }
 ```
+
 
