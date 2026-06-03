@@ -5,37 +5,43 @@ package api
 
 // Defines values for BackupAttributeKey.
 const (
-	BackupAttrActualSchemas         BackupAttributeKey = "actual-schemas"
-	BackupAttrBytes                 BackupAttributeKey = "backup.bytes"
-	BackupAttrCandidates            BackupAttributeKey = "candidates"
-	BackupAttrCopied                BackupAttributeKey = "copied"
-	BackupAttrDBName                BackupAttributeKey = "db.name"
-	BackupAttrDBSystem              BackupAttributeKey = "db.system"
-	BackupAttrEventLabel            BackupAttributeKey = "backup.event.label"
-	BackupAttrEventMessage          BackupAttributeKey = "backup.event.message"
-	BackupAttrExitCode              BackupAttributeKey = "backup.exit_code"
-	BackupAttrFiles                 BackupAttributeKey = "files"
-	BackupAttrIgnored               BackupAttributeKey = "ignored"
-	BackupAttrInvalidDate           BackupAttributeKey = "invalidDate"
-	BackupAttrNetworkTransport      BackupAttributeKey = "network.transport"
-	BackupAttrObjectCount           BackupAttributeKey = "backup.object_count"
-	BackupAttrOtelStatusCode        BackupAttributeKey = "otel.status_code"
-	BackupAttrOtelStatusDescription BackupAttributeKey = "otel.status_description"
-	BackupAttrPhase                 BackupAttributeKey = "backup.phase"
-	BackupAttrProvidedSchemas       BackupAttributeKey = "provided-schemas"
-	BackupAttrRunID                 BackupAttributeKey = "backup.run_id"
-	BackupAttrServerAddress         BackupAttributeKey = "server.address"
-	BackupAttrServerPort            BackupAttributeKey = "server.port"
-	BackupAttrSourceFilename        BackupAttributeKey = "source-filename"
-	BackupAttrStatus                BackupAttributeKey = "backup.status"
-	BackupAttrTarget                BackupAttributeKey = "target"
-	BackupAttrTargetFile            BackupAttributeKey = "targetfile"
-	BackupAttrTargetFilename        BackupAttributeKey = "target-filename"
-	BackupAttrTargetName            BackupAttributeKey = "backup.target.name"
-	BackupAttrTargetType            BackupAttributeKey = "backup.target.type"
-	BackupAttrTargetURL             BackupAttributeKey = "backup.target.url"
-	BackupAttrTimestamp             BackupAttributeKey = "timestamp"
-	BackupAttrTmpFile               BackupAttributeKey = "tmpfile"
+	BackupAttrActualSchemas                BackupAttributeKey = "actual-schemas"
+	BackupAttrBytes                        BackupAttributeKey = "backup.bytes"
+	BackupAttrCandidates                   BackupAttributeKey = "candidates"
+	BackupAttrCopied                       BackupAttributeKey = "copied"
+	BackupAttrDBName                       BackupAttributeKey = "db.name"
+	BackupAttrDBProviderResourceID         BackupAttributeKey = "db.provider.resource_id"
+	BackupAttrDBServerNativeID             BackupAttributeKey = "db.server.native_id"
+	BackupAttrDBSystem                     BackupAttributeKey = "db.system"
+	BackupAttrEventLabel                   BackupAttributeKey = "backup.event.label"
+	BackupAttrEventMessage                 BackupAttributeKey = "backup.event.message"
+	BackupAttrExitCode                     BackupAttributeKey = "backup.exit_code"
+	BackupAttrFiles                        BackupAttributeKey = "files"
+	BackupAttrIgnored                      BackupAttributeKey = "ignored"
+	BackupAttrInvalidDate                  BackupAttributeKey = "invalidDate"
+	BackupAttrNetworkTransport             BackupAttributeKey = "network.transport"
+	BackupAttrObjectCount                  BackupAttributeKey = "backup.object_count"
+	BackupAttrOtelStatusCode               BackupAttributeKey = "otel.status_code"
+	BackupAttrOtelStatusDescription        BackupAttributeKey = "otel.status_description"
+	BackupAttrPhase                        BackupAttributeKey = "backup.phase"
+	BackupAttrProtectedTargetDatabaseCount BackupAttributeKey = "backup.protected_target.database_count"
+	BackupAttrProtectedTargetDatabases     BackupAttributeKey = "backup.protected_target.databases"
+	BackupAttrProtectedTargetIdentity      BackupAttributeKey = "backup.protected_target.identity"
+	BackupAttrProtectedTargetScope         BackupAttributeKey = "backup.protected_target.scope"
+	BackupAttrProvidedSchemas              BackupAttributeKey = "provided-schemas"
+	BackupAttrRunID                        BackupAttributeKey = "backup.run_id"
+	BackupAttrServerAddress                BackupAttributeKey = "server.address"
+	BackupAttrServerPort                   BackupAttributeKey = "server.port"
+	BackupAttrSourceFilename               BackupAttributeKey = "source-filename"
+	BackupAttrStatus                       BackupAttributeKey = "backup.status"
+	BackupAttrTarget                       BackupAttributeKey = "target"
+	BackupAttrTargetFile                   BackupAttributeKey = "targetfile"
+	BackupAttrTargetFilename               BackupAttributeKey = "target-filename"
+	BackupAttrTargetName                   BackupAttributeKey = "backup.target.name"
+	BackupAttrTargetType                   BackupAttributeKey = "backup.target.type"
+	BackupAttrTargetURL                    BackupAttributeKey = "backup.target.url"
+	BackupAttrTimestamp                    BackupAttributeKey = "timestamp"
+	BackupAttrTmpFile                      BackupAttributeKey = "tmpfile"
 )
 
 // Defines values for BackupPhase.
@@ -61,6 +67,13 @@ const (
 	BackupPhaseStartup         BackupPhase = "startup"
 	BackupPhaseUpload          BackupPhase = "upload"
 	BackupPhaseVerify          BackupPhase = "verify"
+)
+
+// Defines values for BackupProtectedTargetScope.
+const (
+	BackupProtectedTargetScopeSelectedDatabases BackupProtectedTargetScope = "selected_databases"
+	BackupProtectedTargetScopeUnknown           BackupProtectedTargetScope = "unknown"
+	BackupProtectedTargetScopeWholeServer       BackupProtectedTargetScope = "whole_server"
 )
 
 // Defines values for BackupSpanName.
@@ -181,6 +194,35 @@ const (
 //	                          MUST NOT contain credentials, access keys, tokens,
 //	                          signed URLs, or any other secrets.
 //
+//	Protected target identity attributes (connect, snapshot, dump spans):
+//	backup.protected_target.scope          — one of the BackupProtectedTargetScope enum values;
+//	                                         describes whether this run protects a selected set
+//	                                         of databases or an entire server/cluster.
+//	backup.protected_target.identity       — engine-computed, deterministic string that stably
+//	                                         identifies the protected target across runs.
+//	                                         Derived from: db.system, protected scope,
+//	                                         db.server.native_id or db.provider.resource_id
+//	                                         when available, and the sorted scope members
+//	                                         (for selected_databases scope). Engines MUST
+//	                                         produce the same value for the same logical
+//	                                         target on every run.
+//	backup.protected_target.database_count — number of logical databases in scope; MAY be
+//	                                         present even when the full list is omitted or
+//	                                         truncated.
+//	backup.protected_target.databases      — JSON array of logical database names included in
+//	                                         the backup scope, when known. Use stable
+//	                                         (sorted) ordering. MAY be omitted or truncated
+//	                                         for whole_server backups with very large database
+//	                                         counts.
+//	db.server.native_id                    — DB-native server or cluster identifier, stable
+//	                                         across restarts. Examples: PostgreSQL
+//	                                         system_identifier (from pg_control), MySQL
+//	                                         server_uuid (@@global.server_uuid).
+//	db.provider.resource_id                — managed-service resource identity assigned by the
+//	                                         cloud provider. Examples: AWS RDS ARN
+//	                                         (arn:aws:rds:…), Cloud SQL resource name
+//	                                         (projects/…/instances/…).
+//
 //	Engine-observed diagnostic attributes (various spans):
 //	timestamp               — ISO 8601 / RFC 3339 timestamp recorded by the engine within a span
 //	source-filename         — source file path being read or processed
@@ -202,6 +244,25 @@ type BackupAttributeKey string
 // "complete" is used only on the root "run" span once all phases finish.
 // For prune-target spans, use "pruneTarget" regardless of the dynamic span name suffix.
 type BackupPhase string
+
+// BackupProtectedTargetScope Describes the scope of a protected target — the logical set of data the backup engine
+// is configured to protect.
+//
+// selected_databases — the engine is configured to back up a named subset of databases
+//
+//	on a server or cluster. The included database list SHOULD be
+//	reported via backup.protected_target.databases.
+//
+// whole_server       — the engine is configured to back up all databases on the server
+//
+//	or cluster. Individual database names MAY still be reported if
+//	known at runtime.
+//
+// unknown            — the engine cannot determine the scope at the time the span is
+//
+//	emitted (e.g. pre-connect). Engines SHOULD update or re-emit
+//	on later spans once the scope is known.
+type BackupProtectedTargetScope string
 
 // BackupSpanName Stable OTEL span names for backup and restore engine traces.
 // Engines MUST use one of these names when creating spans.
