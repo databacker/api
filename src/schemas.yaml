@@ -512,29 +512,31 @@ components:
       - OtelStatusCodeError
       - OtelStatusCodeUnset
 
-    BackupProtectedTargetScope:
+    BackupProtectedTargetSelectionMode:
       type: string
       description: |
-        Describes the scope of a protected target — the logical set of data the backup engine
-        is configured to protect.
+        Describes how databases are selected for protection by the backup engine.
 
-        selected_databases — the engine is configured to back up a named subset of databases
-                             on a server or cluster. The included database list SHOULD be
-                             reported via backup.protected_target.databases.
-        whole_server       — the engine is configured to back up all databases on the server
-                             or cluster. Individual database names MAY still be reported if
-                             known at runtime.
-        unknown            — the engine cannot determine the scope at the time the span is
-                             emitted (e.g. pre-connect). Engines SHOULD update or re-emit
-                             on later spans once the scope is known.
+        all     — the engine is configured to back up all databases on the server or cluster.
+                  Individual database names MAY still be reported via
+                  backup.protected_target.databases if known at runtime.
+                  backup.protected_target.configured_databases has no meaning for this mode.
+        include — the engine is configured to back up a named subset of databases.
+                  The configured list SHOULD be reported via
+                  backup.protected_target.configured_databases; the actual databases backed
+                  up SHOULD be reported via backup.protected_target.databases.
+        exclude — the engine is configured to back up all databases except a named subset.
+                  The excluded list SHOULD be reported via
+                  backup.protected_target.configured_databases; the actual databases backed
+                  up SHOULD be reported via backup.protected_target.databases.
       enum:
-      - selected_databases
-      - whole_server
-      - unknown
+      - all
+      - include
+      - exclude
       x-enum-varnames:
-      - BackupProtectedTargetScopeSelectedDatabases
-      - BackupProtectedTargetScopeWholeServer
-      - BackupProtectedTargetScopeUnknown
+      - BackupProtectedTargetSelectionModeAll
+      - BackupProtectedTargetSelectionModeInclude
+      - BackupProtectedTargetSelectionModeExclude
 
     BackupAttributeKey:
       type: string
@@ -571,25 +573,28 @@ components:
                                     signed URLs, or any other secrets.
 
           Protected target identity attributes (connect, snapshot, dump spans):
-          backup.protected_target.scope          — one of the BackupProtectedTargetScope enum values;
-                                                   describes whether this run protects a selected set
-                                                   of databases or an entire server/cluster.
+          backup.protected_target.selection_mode — one of the BackupProtectedTargetSelectionMode
+                                                   enum values; describes how databases are selected
+                                                   for protection (all, include, or exclude).
           backup.protected_target.identity       — engine-computed, deterministic string that stably
                                                    identifies the protected target across runs.
-                                                   Derived from: db.system, protected scope,
+                                                   Derived from: db.system, selection mode,
                                                    db.server.native_id or db.provider.resource_id
-                                                   when available, and the sorted scope members
-                                                   (for selected_databases scope). Engines MUST
+                                                   when available, and the sorted configured members
+                                                   (for include/exclude modes). Engines MUST
                                                    produce the same value for the same logical
                                                    target on every run.
           backup.protected_target.database_count — number of logical databases in scope; MAY be
                                                    present even when the full list is omitted or
                                                    truncated.
-          backup.protected_target.databases      — JSON array of logical database names included in
-                                                   the backup scope, when known. Use stable
-                                                   (sorted) ordering. MAY be omitted or truncated
-                                                   for whole_server backups with very large database
-                                                   counts.
+          backup.protected_target.configured_databases — JSON array of database names from the engine
+                                                   config: the include list (for include mode) or the
+                                                   exclude list (for exclude mode). Use stable
+                                                   (sorted) ordering. Has no meaning for all mode.
+          backup.protected_target.databases      — JSON array of logical database names actually
+                                                   backed up, when known. Use stable (sorted)
+                                                   ordering. MAY be omitted or truncated for all
+                                                   mode with very large database counts.
           db.server.native_id                    — DB-native server or cluster identifier, stable
                                                    across restarts. Examples: PostgreSQL
                                                    system_identifier (from pg_control), MySQL
@@ -632,9 +637,10 @@ components:
       - backup.target.name
       - backup.target.type
       - backup.target.url
-      - backup.protected_target.scope
+      - backup.protected_target.selection_mode
       - backup.protected_target.identity
       - backup.protected_target.database_count
+      - backup.protected_target.configured_databases
       - backup.protected_target.databases
       - db.server.native_id
       - db.provider.resource_id
@@ -670,9 +676,10 @@ components:
       - BackupAttrTargetName
       - BackupAttrTargetType
       - BackupAttrTargetURL
-      - BackupAttrProtectedTargetScope
+      - BackupAttrProtectedTargetSelectionMode
       - BackupAttrProtectedTargetIdentity
       - BackupAttrProtectedTargetDatabaseCount
+      - BackupAttrProtectedTargetConfiguredDatabases
       - BackupAttrProtectedTargetDatabases
       - BackupAttrDBServerNativeID
       - BackupAttrDBProviderResourceID
