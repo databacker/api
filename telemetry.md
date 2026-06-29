@@ -25,7 +25,7 @@ Each line must be a JSON object with the following fields:
 Multiple lines can be sent in a single submission, but each line must be a separate JSON object.
 
 Submissions are via `POST` to the appropriate endpoint. As of this writing, the endpoint is
-`/telemetry/{instance}/log`, where `{instance}` is the instance ID that the logs are for. However,
+`/engines/telemetry/{instance}/log`, where `{instance}` is the instance ID that the logs are for. However,
 the [API spec](./api.yaml) is authoritative, and should be consulted for the correct endpoint.
 
 Each successful submission returns a `201 Created` response.
@@ -37,7 +37,7 @@ the server should return a `413 Request Entity Too Large` response.
 
 ## Traces — Backup Span Semantic Convention
 
-Backup engines send traces via the `/telemetry/{instance}/traces` endpoint using
+Backup engines send traces via the `/engines/telemetry/{instance}/traces` endpoint using
 [OTLP](https://opentelemetry.io/docs/specs/otlp/) (serialized `ExportTraceServiceRequest` protobuf).
 
 This section defines the **stable semantic convention** that all backup engines MUST follow so that the
@@ -553,5 +553,3 @@ the engine can retrieve `system_identifier` from the instance.
   ]
 }
 ```
-
-

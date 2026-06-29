@@ -25,19 +25,19 @@ type PostTelemetryInstanceLogJSONRequestBody = Log
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
-	// (GET /config/{instance})
+	// (GET /engines/config/{instance})
 	GetConfigInstance(w http.ResponseWriter, r *http.Request, instance string)
 
-	// (GET /telemetry/{instance}/log)
+	// (GET /engines/telemetry/{instance}/log)
 	GetTelemetryInstanceLog(w http.ResponseWriter, r *http.Request, instance string)
 
-	// (POST /telemetry/{instance}/log)
+	// (POST /engines/telemetry/{instance}/log)
 	PostTelemetryInstanceLog(w http.ResponseWriter, r *http.Request, instance string)
 
-	// (GET /telemetry/{instance}/traces)
+	// (GET /engines/telemetry/{instance}/traces)
 	GetTelemetryInstanceTraces(w http.ResponseWriter, r *http.Request, instance string)
 
-	// (POST /telemetry/{instance}/traces)
+	// (POST /engines/telemetry/{instance}/traces)
 	PostTelemetryInstanceTraces(w http.ResponseWriter, r *http.Request, instance string)
 }
 
@@ -45,27 +45,27 @@ type ServerInterface interface {
 
 type Unimplemented struct{}
 
-// (GET /config/{instance})
+// (GET /engines/config/{instance})
 func (_ Unimplemented) GetConfigInstance(w http.ResponseWriter, r *http.Request, instance string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// (GET /telemetry/{instance}/log)
+// (GET /engines/telemetry/{instance}/log)
 func (_ Unimplemented) GetTelemetryInstanceLog(w http.ResponseWriter, r *http.Request, instance string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// (POST /telemetry/{instance}/log)
+// (POST /engines/telemetry/{instance}/log)
 func (_ Unimplemented) PostTelemetryInstanceLog(w http.ResponseWriter, r *http.Request, instance string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// (GET /telemetry/{instance}/traces)
+// (GET /engines/telemetry/{instance}/traces)
 func (_ Unimplemented) GetTelemetryInstanceTraces(w http.ResponseWriter, r *http.Request, instance string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// (POST /telemetry/{instance}/traces)
+// (POST /engines/telemetry/{instance}/traces)
 func (_ Unimplemented) PostTelemetryInstanceTraces(w http.ResponseWriter, r *http.Request, instance string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
@@ -348,19 +348,19 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/config/{instance}", wrapper.GetConfigInstance)
+		r.Get(options.BaseURL+"/engines/config/{instance}", wrapper.GetConfigInstance)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/telemetry/{instance}/log", wrapper.GetTelemetryInstanceLog)
+		r.Get(options.BaseURL+"/engines/telemetry/{instance}/log", wrapper.GetTelemetryInstanceLog)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/telemetry/{instance}/log", wrapper.PostTelemetryInstanceLog)
+		r.Post(options.BaseURL+"/engines/telemetry/{instance}/log", wrapper.PostTelemetryInstanceLog)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/telemetry/{instance}/traces", wrapper.GetTelemetryInstanceTraces)
+		r.Get(options.BaseURL+"/engines/telemetry/{instance}/traces", wrapper.GetTelemetryInstanceTraces)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/telemetry/{instance}/traces", wrapper.PostTelemetryInstanceTraces)
+		r.Post(options.BaseURL+"/engines/telemetry/{instance}/traces", wrapper.PostTelemetryInstanceTraces)
 	})
 
 	return r
@@ -650,19 +650,19 @@ func (response PostTelemetryInstanceTraces429Response) VisitPostTelemetryInstanc
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 
-	// (GET /config/{instance})
+	// (GET /engines/config/{instance})
 	GetConfigInstance(ctx context.Context, request GetConfigInstanceRequestObject) (GetConfigInstanceResponseObject, error)
 
-	// (GET /telemetry/{instance}/log)
+	// (GET /engines/telemetry/{instance}/log)
 	GetTelemetryInstanceLog(ctx context.Context, request GetTelemetryInstanceLogRequestObject) (GetTelemetryInstanceLogResponseObject, error)
 
-	// (POST /telemetry/{instance}/log)
+	// (POST /engines/telemetry/{instance}/log)
 	PostTelemetryInstanceLog(ctx context.Context, request PostTelemetryInstanceLogRequestObject) (PostTelemetryInstanceLogResponseObject, error)
 
-	// (GET /telemetry/{instance}/traces)
+	// (GET /engines/telemetry/{instance}/traces)
 	GetTelemetryInstanceTraces(ctx context.Context, request GetTelemetryInstanceTracesRequestObject) (GetTelemetryInstanceTracesResponseObject, error)
 
-	// (POST /telemetry/{instance}/traces)
+	// (POST /engines/telemetry/{instance}/traces)
 	PostTelemetryInstanceTraces(ctx context.Context, request PostTelemetryInstanceTracesRequestObject) (PostTelemetryInstanceTracesResponseObject, error)
 }
 

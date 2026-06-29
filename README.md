@@ -118,7 +118,8 @@ While this may not be possible permanently, this specification shall attempt to 
 as possible.
 
 As this API is as closely REST compatible as possible, all resources are permanent endpoints,
-e.g. `/config/{instance}` and `/report/{instance}`. New resources will be released at new endpoints.
+e.g. `/engines/config/{instance}` and `/engines/telemetry/{instance}/log`. New resources will be
+released at new endpoints.
 
 Specific versions of individual resources are versioned via HTTP headers.
 The `Accept` header is used to specify the version of the resource requested.
