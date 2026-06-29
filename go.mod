@@ -1,4 +1,4 @@
-module github.com/databacker/api/go/api
+module github.com/databacker/api
 
 go 1.21.5
 
