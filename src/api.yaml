@@ -12,8 +12,9 @@ security:
   - JWT: []
 
 paths:
-  /config/{instance}:
+  /engines/config/{instance}:
     get:
+      operationId: getConfigInstance
       description: Returns the configuration for a specific databacker instance identified by ID
       parameters:
         - in: path
@@ -41,8 +42,9 @@ paths:
                   message:
                     type: string
 
-  /telemetry/{instance}/log:
+  /engines/telemetry/{instance}/log:
     get:
+      operationId: getTelemetryInstanceLog
       description: get the ability to log to this endpoint, given credentials
       parameters:
         - in: path
@@ -91,6 +93,7 @@ paths:
                   message:
                     type: string
     post:
+      operationId: postTelemetryInstanceLog
       description: upload logs from a databacker instance
       parameters:
         - in: path
@@ -136,8 +139,9 @@ paths:
                   message:
                     type: string
 
-  /telemetry/{instance}/traces:
+  /engines/telemetry/{instance}/traces:
     get:
+      operationId: getTelemetryInstanceTraces
       description: get the ability to send traces to this endpoint, given credentials
       parameters:
         - in: path
@@ -186,6 +190,7 @@ paths:
                   message:
                     type: string
     post:
+      operationId: postTelemetryInstanceTraces
       description: upload OTLP traces from a databacker instance
       parameters:
         - in: path

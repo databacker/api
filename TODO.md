@@ -17,4 +17,4 @@ Paths:
 `POST /instances/{instance}/config` or `POST /configs` - create a new config for a specific instance.
 This is less of an issue to use either or, as we will process the body to determine which instance it is for. Or conversely, we might make it required in the query. Or simpler may be to include in the path.
 
-`POST /telemetry/{instance}/logs` - submit logs from an individual run for a backup attempt. An alternative is to create a backup attempt, and then submit logs: `POST /backups` (or `POST /instances/{instance}/backups`) to create a backup attempt, and then `POST /backups/{backup}/logs` (or `POST /instances/{instance}/backups/{backup}/logs`) to submit logs.
+`POST /engines/telemetry/{instance}/log` - submit logs from an individual run for a backup attempt. An alternative is to create a backup attempt, and then submit logs: `POST /backups` (or `POST /engines/instances/{instance}/backups`) to create a backup attempt, and then `POST /backups/{backup}/logs` (or `POST /engines/instances/{instance}/backups/{backup}/logs`) to submit logs.
