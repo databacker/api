@@ -1,9 +1,9 @@
 module github.com/databacker/api
 
-go 1.21.5
+go 1.23
 
 require (
-	github.com/go-chi/chi/v5 v5.2.3
+	github.com/go-chi/chi/v5 v5.3.0
 	github.com/oapi-codegen/runtime v1.1.2
 )
 
