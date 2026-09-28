@@ -13,11 +13,48 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/oapi-codegen/runtime"
 	strictnethttp "github.com/oapi-codegen/runtime/strictmiddleware/nethttp"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 const (
-	JWTScopes = "JWT.Scopes"
+	EngineSignatureScopes      = "EngineSignature.Scopes"
+	EngineSignatureInputScopes = "EngineSignatureInput.Scopes"
 )
+
+// ErrorResponse defines model for ErrorResponse.
+type ErrorResponse struct {
+	Message string `json:"message" yaml:"message"`
+}
+
+// ContentDigest defines model for ContentDigest.
+type ContentDigest = string
+
+// IdempotencyKey defines model for IdempotencyKey.
+type IdempotencyKey = openapi_types.UUID
+
+// EngineForbidden defines model for EngineForbidden.
+type EngineForbidden = ErrorResponse
+
+// EngineUnauthorized defines model for EngineUnauthorized.
+type EngineUnauthorized = ErrorResponse
+
+// PostTelemetryInstanceLogParams defines parameters for PostTelemetryInstanceLog.
+type PostTelemetryInstanceLogParams struct {
+	// ContentDigest RFC 9530 SHA-256 digest of the transmitted request content.
+	ContentDigest ContentDigest `json:"Content-Digest" yaml:"Content-Digest"`
+
+	// IdempotencyKey Stable UUID reused for retries of the same mutation or ingestion request.
+	IdempotencyKey IdempotencyKey `json:"Idempotency-Key" yaml:"Idempotency-Key"`
+}
+
+// PostTelemetryInstanceTracesParams defines parameters for PostTelemetryInstanceTraces.
+type PostTelemetryInstanceTracesParams struct {
+	// ContentDigest RFC 9530 SHA-256 digest of the transmitted request content.
+	ContentDigest ContentDigest `json:"Content-Digest" yaml:"Content-Digest"`
+
+	// IdempotencyKey Stable UUID reused for retries of the same mutation or ingestion request.
+	IdempotencyKey IdempotencyKey `json:"Idempotency-Key" yaml:"Idempotency-Key"`
+}
 
 // PostTelemetryInstanceLogJSONRequestBody defines body for PostTelemetryInstanceLog for application/json ContentType.
 type PostTelemetryInstanceLogJSONRequestBody = Log
@@ -32,13 +69,13 @@ type ServerInterface interface {
 	GetTelemetryInstanceLog(w http.ResponseWriter, r *http.Request, instance string)
 
 	// (POST /engines/telemetry/{instance}/log)
-	PostTelemetryInstanceLog(w http.ResponseWriter, r *http.Request, instance string)
+	PostTelemetryInstanceLog(w http.ResponseWriter, r *http.Request, instance string, params PostTelemetryInstanceLogParams)
 
 	// (GET /engines/telemetry/{instance}/traces)
 	GetTelemetryInstanceTraces(w http.ResponseWriter, r *http.Request, instance string)
 
 	// (POST /engines/telemetry/{instance}/traces)
-	PostTelemetryInstanceTraces(w http.ResponseWriter, r *http.Request, instance string)
+	PostTelemetryInstanceTraces(w http.ResponseWriter, r *http.Request, instance string, params PostTelemetryInstanceTracesParams)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -56,7 +93,7 @@ func (_ Unimplemented) GetTelemetryInstanceLog(w http.ResponseWriter, r *http.Re
 }
 
 // (POST /engines/telemetry/{instance}/log)
-func (_ Unimplemented) PostTelemetryInstanceLog(w http.ResponseWriter, r *http.Request, instance string) {
+func (_ Unimplemented) PostTelemetryInstanceLog(w http.ResponseWriter, r *http.Request, instance string, params PostTelemetryInstanceLogParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -66,7 +103,7 @@ func (_ Unimplemented) GetTelemetryInstanceTraces(w http.ResponseWriter, r *http
 }
 
 // (POST /engines/telemetry/{instance}/traces)
-func (_ Unimplemented) PostTelemetryInstanceTraces(w http.ResponseWriter, r *http.Request, instance string) {
+func (_ Unimplemented) PostTelemetryInstanceTraces(w http.ResponseWriter, r *http.Request, instance string, params PostTelemetryInstanceTracesParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -95,7 +132,9 @@ func (siw *ServerInterfaceWrapper) GetConfigInstance(w http.ResponseWriter, r *h
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, JWTScopes, []string{})
+	ctx = context.WithValue(ctx, EngineSignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, EngineSignatureInputScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -126,7 +165,9 @@ func (siw *ServerInterfaceWrapper) GetTelemetryInstanceLog(w http.ResponseWriter
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, JWTScopes, []string{})
+	ctx = context.WithValue(ctx, EngineSignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, EngineSignatureInputScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -157,12 +198,65 @@ func (siw *ServerInterfaceWrapper) PostTelemetryInstanceLog(w http.ResponseWrite
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, JWTScopes, []string{})
+	ctx = context.WithValue(ctx, EngineSignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, EngineSignatureInputScopes, []string{})
 
 	r = r.WithContext(ctx)
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostTelemetryInstanceLogParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Content-Digest" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Content-Digest")]; found {
+		var ContentDigest ContentDigest
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Content-Digest", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Content-Digest", valueList[0], &ContentDigest, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Content-Digest", Err: err})
+			return
+		}
+
+		params.ContentDigest = ContentDigest
+
+	} else {
+		err := fmt.Errorf("Header parameter Content-Digest is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Content-Digest", Err: err})
+		return
+	}
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostTelemetryInstanceLog(w, r, instance)
+		siw.Handler.PostTelemetryInstanceLog(w, r, instance, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -188,7 +282,9 @@ func (siw *ServerInterfaceWrapper) GetTelemetryInstanceTraces(w http.ResponseWri
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, JWTScopes, []string{})
+	ctx = context.WithValue(ctx, EngineSignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, EngineSignatureInputScopes, []string{})
 
 	r = r.WithContext(ctx)
 
@@ -219,12 +315,65 @@ func (siw *ServerInterfaceWrapper) PostTelemetryInstanceTraces(w http.ResponseWr
 
 	ctx := r.Context()
 
-	ctx = context.WithValue(ctx, JWTScopes, []string{})
+	ctx = context.WithValue(ctx, EngineSignatureScopes, []string{})
+
+	ctx = context.WithValue(ctx, EngineSignatureInputScopes, []string{})
 
 	r = r.WithContext(ctx)
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params PostTelemetryInstanceTracesParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Content-Digest" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Content-Digest")]; found {
+		var ContentDigest ContentDigest
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Content-Digest", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Content-Digest", valueList[0], &ContentDigest, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Content-Digest", Err: err})
+			return
+		}
+
+		params.ContentDigest = ContentDigest
+
+	} else {
+		err := fmt.Errorf("Header parameter Content-Digest is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Content-Digest", Err: err})
+		return
+	}
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostTelemetryInstanceTraces(w, r, instance)
+		siw.Handler.PostTelemetryInstanceTraces(w, r, instance, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -366,6 +515,17 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	return r
 }
 
+type EngineForbiddenJSONResponse ErrorResponse
+
+type EngineUnauthorizedResponseHeaders struct {
+	Date string
+}
+type EngineUnauthorizedJSONResponse struct {
+	Body ErrorResponse
+
+	Headers EngineUnauthorizedResponseHeaders
+}
+
 type GetConfigInstanceRequestObject struct {
 	Instance string `json:"instance"`
 }
@@ -390,6 +550,25 @@ type GetConfigInstance400JSONResponse struct {
 func (response GetConfigInstance400JSONResponse) VisitGetConfigInstanceResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetConfigInstance401JSONResponse struct{ EngineUnauthorizedJSONResponse }
+
+func (response GetConfigInstance401JSONResponse) VisitGetConfigInstanceResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Date", fmt.Sprint(response.Headers.Date))
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type GetConfigInstance403JSONResponse struct{ EngineForbiddenJSONResponse }
+
+func (response GetConfigInstance403JSONResponse) VisitGetConfigInstanceResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -432,20 +611,17 @@ func (response GetTelemetryInstanceLog400JSONResponse) VisitGetTelemetryInstance
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetTelemetryInstanceLog401JSONResponse struct {
-	Message *string `json:"message,omitempty" yaml:"message,omitempty"`
-}
+type GetTelemetryInstanceLog401JSONResponse struct{ EngineUnauthorizedJSONResponse }
 
 func (response GetTelemetryInstanceLog401JSONResponse) VisitGetTelemetryInstanceLogResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Date", fmt.Sprint(response.Headers.Date))
 	w.WriteHeader(401)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type GetTelemetryInstanceLog403JSONResponse struct {
-	Message *string `json:"message,omitempty" yaml:"message,omitempty"`
-}
+type GetTelemetryInstanceLog403JSONResponse struct{ EngineForbiddenJSONResponse }
 
 func (response GetTelemetryInstanceLog403JSONResponse) VisitGetTelemetryInstanceLogResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -464,6 +640,7 @@ func (response GetTelemetryInstanceLog404Response) VisitGetTelemetryInstanceLogR
 
 type PostTelemetryInstanceLogRequestObject struct {
 	Instance string `json:"instance"`
+	Params   PostTelemetryInstanceLogParams
 	Body     *PostTelemetryInstanceLogJSONRequestBody
 }
 
@@ -490,20 +667,17 @@ func (response PostTelemetryInstanceLog400JSONResponse) VisitPostTelemetryInstan
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostTelemetryInstanceLog401JSONResponse struct {
-	Message *string `json:"message,omitempty" yaml:"message,omitempty"`
-}
+type PostTelemetryInstanceLog401JSONResponse struct{ EngineUnauthorizedJSONResponse }
 
 func (response PostTelemetryInstanceLog401JSONResponse) VisitPostTelemetryInstanceLogResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Date", fmt.Sprint(response.Headers.Date))
 	w.WriteHeader(401)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type PostTelemetryInstanceLog403JSONResponse struct {
-	Message *string `json:"message,omitempty" yaml:"message,omitempty"`
-}
+type PostTelemetryInstanceLog403JSONResponse struct{ EngineForbiddenJSONResponse }
 
 func (response PostTelemetryInstanceLog403JSONResponse) VisitPostTelemetryInstanceLogResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -542,20 +716,17 @@ func (response GetTelemetryInstanceTraces400JSONResponse) VisitGetTelemetryInsta
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetTelemetryInstanceTraces401JSONResponse struct {
-	Message *string `json:"message,omitempty" yaml:"message,omitempty"`
-}
+type GetTelemetryInstanceTraces401JSONResponse struct{ EngineUnauthorizedJSONResponse }
 
 func (response GetTelemetryInstanceTraces401JSONResponse) VisitGetTelemetryInstanceTracesResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Date", fmt.Sprint(response.Headers.Date))
 	w.WriteHeader(401)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type GetTelemetryInstanceTraces403JSONResponse struct {
-	Message *string `json:"message,omitempty" yaml:"message,omitempty"`
-}
+type GetTelemetryInstanceTraces403JSONResponse struct{ EngineForbiddenJSONResponse }
 
 func (response GetTelemetryInstanceTraces403JSONResponse) VisitGetTelemetryInstanceTracesResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -574,6 +745,7 @@ func (response GetTelemetryInstanceTraces404Response) VisitGetTelemetryInstanceT
 
 type PostTelemetryInstanceTracesRequestObject struct {
 	Instance string `json:"instance"`
+	Params   PostTelemetryInstanceTracesParams
 	Body     io.Reader
 }
 
@@ -611,20 +783,17 @@ func (response PostTelemetryInstanceTraces400JSONResponse) VisitPostTelemetryIns
 	return json.NewEncoder(w).Encode(response)
 }
 
-type PostTelemetryInstanceTraces401JSONResponse struct {
-	Message *string `json:"message,omitempty" yaml:"message,omitempty"`
-}
+type PostTelemetryInstanceTraces401JSONResponse struct{ EngineUnauthorizedJSONResponse }
 
 func (response PostTelemetryInstanceTraces401JSONResponse) VisitPostTelemetryInstanceTracesResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Date", fmt.Sprint(response.Headers.Date))
 	w.WriteHeader(401)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type PostTelemetryInstanceTraces403JSONResponse struct {
-	Message *string `json:"message,omitempty" yaml:"message,omitempty"`
-}
+type PostTelemetryInstanceTraces403JSONResponse struct{ EngineForbiddenJSONResponse }
 
 func (response PostTelemetryInstanceTraces403JSONResponse) VisitPostTelemetryInstanceTracesResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -748,10 +917,11 @@ func (sh *strictHandler) GetTelemetryInstanceLog(w http.ResponseWriter, r *http.
 }
 
 // PostTelemetryInstanceLog operation middleware
-func (sh *strictHandler) PostTelemetryInstanceLog(w http.ResponseWriter, r *http.Request, instance string) {
+func (sh *strictHandler) PostTelemetryInstanceLog(w http.ResponseWriter, r *http.Request, instance string, params PostTelemetryInstanceLogParams) {
 	var request PostTelemetryInstanceLogRequestObject
 
 	request.Instance = instance
+	request.Params = params
 
 	var body PostTelemetryInstanceLogJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -807,10 +977,11 @@ func (sh *strictHandler) GetTelemetryInstanceTraces(w http.ResponseWriter, r *ht
 }
 
 // PostTelemetryInstanceTraces operation middleware
-func (sh *strictHandler) PostTelemetryInstanceTraces(w http.ResponseWriter, r *http.Request, instance string) {
+func (sh *strictHandler) PostTelemetryInstanceTraces(w http.ResponseWriter, r *http.Request, instance string, params PostTelemetryInstanceTracesParams) {
 	var request PostTelemetryInstanceTracesRequestObject
 
 	request.Instance = instance
+	request.Params = params
 
 	request.Body = r.Body
 

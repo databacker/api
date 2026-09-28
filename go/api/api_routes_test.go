@@ -6,14 +6,20 @@ import (
 	"testing"
 )
 
+var signedBodyHeaders = map[string]string{
+	"Content-Digest":  "sha-256=:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=:",
+	"Idempotency-Key": "550e8400-e29b-41d4-a716-446655440000",
+}
+
 func TestEngineRoutesRegisteredWithoutRootTelemetryOrConfigRoutes(t *testing.T) {
 	handler := Handler(Unimplemented{})
 
 	tests := []struct {
-		name   string
-		method string
-		path   string
-		want   int
+		name    string
+		method  string
+		path    string
+		headers map[string]string
+		want    int
 	}{
 		{
 			name:   "prefixed config route is registered",
@@ -28,10 +34,11 @@ func TestEngineRoutesRegisteredWithoutRootTelemetryOrConfigRoutes(t *testing.T) 
 			want:   http.StatusNotImplemented,
 		},
 		{
-			name:   "prefixed telemetry log post route is registered",
-			method: http.MethodPost,
-			path:   "/engines/telemetry/test-instance/log",
-			want:   http.StatusNotImplemented,
+			name:    "prefixed telemetry log post route is registered",
+			method:  http.MethodPost,
+			path:    "/engines/telemetry/test-instance/log",
+			headers: signedBodyHeaders,
+			want:    http.StatusNotImplemented,
 		},
 		{
 			name:   "prefixed telemetry traces get route is registered",
@@ -40,10 +47,11 @@ func TestEngineRoutesRegisteredWithoutRootTelemetryOrConfigRoutes(t *testing.T) 
 			want:   http.StatusNotImplemented,
 		},
 		{
-			name:   "prefixed telemetry traces post route is registered",
-			method: http.MethodPost,
-			path:   "/engines/telemetry/test-instance/traces",
-			want:   http.StatusNotImplemented,
+			name:    "prefixed telemetry traces post route is registered",
+			method:  http.MethodPost,
+			path:    "/engines/telemetry/test-instance/traces",
+			headers: signedBodyHeaders,
+			want:    http.StatusNotImplemented,
 		},
 		{
 			name:   "root config route is not registered",
@@ -80,12 +88,35 @@ func TestEngineRoutesRegisteredWithoutRootTelemetryOrConfigRoutes(t *testing.T) 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(tt.method, tt.path, nil)
+			for name, value := range tt.headers {
+				req.Header.Set(name, value)
+			}
 			rec := httptest.NewRecorder()
 
 			handler.ServeHTTP(rec, req)
 
 			if rec.Code != tt.want {
 				t.Fatalf("%s %s returned %d, want %d", tt.method, tt.path, rec.Code, tt.want)
+			}
+		})
+	}
+}
+
+func TestBodyRoutesRequireDigestAndIdempotencyHeaders(t *testing.T) {
+	handler := Handler(Unimplemented{})
+
+	for _, path := range []string{
+		"/engines/telemetry/test-instance/log",
+		"/engines/telemetry/test-instance/traces",
+	} {
+		t.Run(path, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, path, nil)
+			rec := httptest.NewRecorder()
+
+			handler.ServeHTTP(rec, req)
+
+			if rec.Code != http.StatusBadRequest {
+				t.Fatalf("POST %s returned %d, want %d", path, rec.Code, http.StatusBadRequest)
 			}
 		})
 	}
