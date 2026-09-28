@@ -108,8 +108,9 @@ RFC 9421 includes `@signature-params` as the final signature-base line. The
 profile does not use a separate engine-ID header and does not carry the public
 key on every request. The `keyid` fingerprint indexes the already-registered
 authentication public key and its engine record. The verifier uses that stored
-public key to check the request signature, and the resulting authenticated
-engine must equal the `{instance}` value in the signed route path.
+public key to check the request signature. Engine routes are self-only: the
+resulting authenticated engine is the sole target, and callers cannot select
+another engine through the path, query, or body.
 
 `@path` and `@query` are constructed from the request target actually sent or
 received. Percent-encoded octets are not decoded and re-encoded. Query order,
@@ -133,8 +134,8 @@ The verifier rejects extra labels, duplicate or ambiguous fields, unsupported
 components or parameters, and signatures whose request representation cannot
 be reconstructed exactly. It resolves `keyid`, enforces time and key state,
 verifies the body digest, verifies the Ed25519 signature, enforces idempotency,
-and only then dispatches to the handler. A path `{instance}` never selects the
-authenticated identity.
+and only then dispatches to the handler. Handlers obtain the engine exclusively
+from authenticated request context.
 
 The OpenAPI `apiKey` security schemes only declare the two RFC 9421 headers for
 clients and generated tooling. Generated OpenAPI wrappers do not implement this
@@ -144,7 +145,7 @@ proof of authentication.
 
 ## Encrypted configuration v2
 
-`GET /engines/config/{instance}` continues to return a complete `Config`.
+`GET /engines/config` returns a complete `Config` for the authenticated engine.
 When `kind` is `encrypted`, `spec` is the v2 `EncryptedSpec`. Successful
 decryption yields another complete `Config` encoded as UTF-8 JSON; it may be
 `local`, `remote`, or `encrypted`.
@@ -158,7 +159,6 @@ Canonical additional authenticated data is:
 
 ```text
 opaque("databacker/configuration-envelope-aad/v2")
-|| opaque(UTF8(instance_path_parameter))
 || opaque(UTF8(envelope_version))
 || uint64_be(configuration_version)
 || opaque(UTF8(recipient_key_id))
@@ -191,10 +191,10 @@ recipient X25519 public key and generation above; it is not a database-assigned
 identifier. An encryptor computes it from the registered recipient key, and an
 engine recomputes it from its derived key before accepting the envelope.
 
-The engine ID is not duplicated in `EncryptedSpec`; the authenticated resource
-path supplies it for AAD. Encryption tools use the target engine resource ID,
-and the engine uses the signed `{instance}` path value. Any disagreement causes
-AEAD authentication to fail.
+The recipient key ID and generation bind the envelope to the intended engine
+key. Cloud's database-assigned engine ID is deliberately absent: it is neither
+locally derivable nor needed for decryption, and authentication-key rotation
+must remain independent of configuration encryption.
 
 Plaintext is limited to 4 MiB. Validate envelope algorithms, identifiers,
 decoded lengths, version monotonicity, and recipient key identity before

@@ -81,10 +81,11 @@ The signature `keyid` is a deterministic, domain-separated fingerprint of the
 registered authentication public key and its generation—not an arbitrary or
 server-issued identifier. The engine and server compute it independently. It
 indexes the stored public key and resolves the authenticated engine; the public
-key itself is not sent on every request. An `{instance}` path parameter must
-equal that authenticated identity, so changing the path never selects a
-different identity. Body-bearing requests also carry an RFC 9530 SHA-256
-`Content-Digest` and a signed idempotency key.
+key itself is not sent on every request. Engine endpoints are self-only: the
+verified key selects the sole engine on whose behalf the request operates, and
+no engine identifier is accepted from the path, query, or body. Body-bearing
+requests also carry an RFC 9530 SHA-256 `Content-Digest` and a signed
+idempotency key.
 
 The exact signature profile, credential derivation, key IDs, and encrypted
 configuration envelope are specified in [auth.md](auth.md).
@@ -132,7 +133,7 @@ While this may not be possible permanently, this specification shall attempt to 
 as possible.
 
 As this API is as closely REST compatible as possible, all resources are permanent endpoints,
-e.g. `/engines/config/{instance}` and `/engines/telemetry/{instance}/log`. New resources will be
+e.g. `/engines/config` and `/engines/telemetry/log`. New resources will be
 released at new endpoints.
 
 Specific versions of individual resources are versioned via HTTP headers.
