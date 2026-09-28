@@ -13,21 +13,13 @@ security:
     EngineSignature: []
 
 paths:
-  /engines/config/{instance}:
+  /engines/config:
     get:
-      operationId: getConfigInstance
+      operationId: getEngineConfig
       description: |
-        Returns a complete Config document for a specific databacker instance.
-        The document may be local, remote, or encrypted. Authentication is
-        derived from the verified signature key; the authenticated engine must
-        equal the instance path parameter.
-      parameters:
-        - in: path
-          name: instance
-          schema:
-            type: string
-          required: true
-          description: Unique ID of the databacker instance whose config should be retrieved
+        Returns a complete Config document for the authenticated engine. The
+        document may be local, remote, or encrypted. The verified signature
+        key identifies the engine; callers cannot select another engine.
       responses:
         '200':
           description: successfully authenticated and found config for a databacker instance
@@ -51,17 +43,10 @@ paths:
         '403':
           $ref: '#/components/responses/EngineForbidden'
 
-  /engines/telemetry/{instance}/log:
+  /engines/telemetry/log:
     get:
-      operationId: getTelemetryInstanceLog
-      description: get the ability to log to this endpoint, given credentials
-      parameters:
-        - in: path
-          name: instance
-          schema:
-            type: string
-          required: true
-          description: Unique ID of the databacker instance for whom this log is generated
+      operationId: getEngineTelemetryLog
+      description: get the ability to send logs for the authenticated engine
       responses:
         '200':
           description: successfully authenticated and can send logs
@@ -88,15 +73,9 @@ paths:
         '403':
           $ref: '#/components/responses/EngineForbidden'
     post:
-      operationId: postTelemetryInstanceLog
-      description: upload logs from a databacker instance
+      operationId: postEngineTelemetryLog
+      description: upload logs from the authenticated engine
       parameters:
-        - in: path
-          name: instance
-          schema:
-            type: string
-          required: true
-          description: Unique ID of the databacker instance for whom the log is being uploaded
         - $ref: '#/components/parameters/ContentDigest'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
@@ -122,17 +101,10 @@ paths:
         '403':
           $ref: '#/components/responses/EngineForbidden'
 
-  /engines/telemetry/{instance}/traces:
+  /engines/telemetry/traces:
     get:
-      operationId: getTelemetryInstanceTraces
-      description: get the ability to send traces to this endpoint, given credentials
-      parameters:
-        - in: path
-          name: instance
-          schema:
-            type: string
-          required: true
-          description: Unique ID of the databacker instance for whom this trace is generated
+      operationId: getEngineTelemetryTraces
+      description: get the ability to send traces for the authenticated engine
       responses:
         '200':
           description: successfully authenticated and can send traces
@@ -159,15 +131,9 @@ paths:
         '403':
           $ref: '#/components/responses/EngineForbidden'
     post:
-      operationId: postTelemetryInstanceTraces
-      description: upload OTLP traces from a databacker instance
+      operationId: postEngineTelemetryTraces
+      description: upload OTLP traces from the authenticated engine
       parameters:
-        - in: path
-          name: instance
-          schema:
-            type: string
-          required: true
-          description: Unique ID of the databacker instance for whom the log is being uploaded
         - $ref: '#/components/parameters/ContentDigest'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:

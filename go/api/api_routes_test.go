@@ -11,7 +11,7 @@ var signedBodyHeaders = map[string]string{
 	"Idempotency-Key": "550e8400-e29b-41d4-a716-446655440000",
 }
 
-func TestEngineRoutesRegisteredWithoutRootTelemetryOrConfigRoutes(t *testing.T) {
+func TestSelfOnlyEngineRoutesRegisteredWithoutLegacyRoutes(t *testing.T) {
 	handler := Handler(Unimplemented{})
 
 	tests := []struct {
@@ -22,41 +22,41 @@ func TestEngineRoutesRegisteredWithoutRootTelemetryOrConfigRoutes(t *testing.T) 
 		want    int
 	}{
 		{
-			name:   "prefixed config route is registered",
+			name:   "self config route is registered",
+			method: http.MethodGet,
+			path:   "/engines/config",
+			want:   http.StatusNotImplemented,
+		},
+		{
+			name:   "self telemetry log get route is registered",
+			method: http.MethodGet,
+			path:   "/engines/telemetry/log",
+			want:   http.StatusNotImplemented,
+		},
+		{
+			name:    "self telemetry log post route is registered",
+			method:  http.MethodPost,
+			path:    "/engines/telemetry/log",
+			headers: signedBodyHeaders,
+			want:    http.StatusNotImplemented,
+		},
+		{
+			name:   "self telemetry traces get route is registered",
+			method: http.MethodGet,
+			path:   "/engines/telemetry/traces",
+			want:   http.StatusNotImplemented,
+		},
+		{
+			name:    "self telemetry traces post route is registered",
+			method:  http.MethodPost,
+			path:    "/engines/telemetry/traces",
+			headers: signedBodyHeaders,
+			want:    http.StatusNotImplemented,
+		},
+		{
+			name:   "legacy instance config route is not registered",
 			method: http.MethodGet,
 			path:   "/engines/config/test-instance",
-			want:   http.StatusNotImplemented,
-		},
-		{
-			name:   "prefixed telemetry log get route is registered",
-			method: http.MethodGet,
-			path:   "/engines/telemetry/test-instance/log",
-			want:   http.StatusNotImplemented,
-		},
-		{
-			name:    "prefixed telemetry log post route is registered",
-			method:  http.MethodPost,
-			path:    "/engines/telemetry/test-instance/log",
-			headers: signedBodyHeaders,
-			want:    http.StatusNotImplemented,
-		},
-		{
-			name:   "prefixed telemetry traces get route is registered",
-			method: http.MethodGet,
-			path:   "/engines/telemetry/test-instance/traces",
-			want:   http.StatusNotImplemented,
-		},
-		{
-			name:    "prefixed telemetry traces post route is registered",
-			method:  http.MethodPost,
-			path:    "/engines/telemetry/test-instance/traces",
-			headers: signedBodyHeaders,
-			want:    http.StatusNotImplemented,
-		},
-		{
-			name:   "root config route is not registered",
-			method: http.MethodGet,
-			path:   "/config/test-instance",
 			want:   http.StatusNotFound,
 		},
 		{
@@ -106,8 +106,8 @@ func TestBodyRoutesRequireDigestAndIdempotencyHeaders(t *testing.T) {
 	handler := Handler(Unimplemented{})
 
 	for _, path := range []string{
-		"/engines/telemetry/test-instance/log",
-		"/engines/telemetry/test-instance/traces",
+		"/engines/telemetry/log",
+		"/engines/telemetry/traces",
 	} {
 		t.Run(path, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, path, nil)
