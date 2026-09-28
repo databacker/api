@@ -309,10 +309,10 @@ type CommonRemoteDetails struct {
 	// Starts with hash algorithm, e.g. sha256, followed by a : and the hex of the fingerprint.
 	Certificates *[]string `json:"certificates,omitempty" yaml:"certificates,omitempty"`
 
-	// Credentials Locally usable engine credential. The master is sensitive and MUST be
+	// Credentials Locally usable engine credential. The seed is sensitive and MUST be
 	// redacted from logs, errors, metrics, traces, and diagnostic output.
 	// Private authentication and configuration-encryption keys are derived
-	// from this master; they are never transmitted to a controller. Key IDs
+	// from this seed; they are never transmitted to a controller. Key IDs
 	// are deterministic fingerprints derived from the corresponding public
 	// key and generation, so no server-issued key ID is stored here.
 	Credentials EngineCredentials `json:"credentials" yaml:"credentials"`
@@ -480,10 +480,10 @@ type Encryption struct {
 // EncryptionAlgorithm algorithm to use for encryption
 type EncryptionAlgorithm string
 
-// EngineCredentials Locally usable engine credential. The master is sensitive and MUST be
+// EngineCredentials Locally usable engine credential. The seed is sensitive and MUST be
 // redacted from logs, errors, metrics, traces, and diagnostic output.
 // Private authentication and configuration-encryption keys are derived
-// from this master; they are never transmitted to a controller. Key IDs
+// from this seed; they are never transmitted to a controller. Key IDs
 // are deterministic fingerprints derived from the corresponding public
 // key and generation, so no server-issued key ID is stored here.
 type EngineCredentials struct {
@@ -493,15 +493,15 @@ type EngineCredentials struct {
 	// ConfigurationEncryptionGeneration Generation used to derive the active X25519 configuration key.
 	ConfigurationEncryptionGeneration uint64 `json:"configurationEncryptionGeneration" yaml:"configurationEncryptionGeneration"`
 
-	// Master Exactly 32 uniformly random bytes encoded with strict standard
-	// padded base64. This field is secret.
-	Master string `json:"master" yaml:"master"`
-
 	// RetainedConfigurationEncryptionGenerations Older positive X25519 generations retained temporarily to decrypt
 	// configurations during ordinary key rotation. Generation zero and
 	// the active generation are invalid entries.
-	RetainedConfigurationEncryptionGenerations *[]uint64                `json:"retainedConfigurationEncryptionGenerations,omitempty" yaml:"retainedConfigurationEncryptionGenerations,omitempty"`
-	Version                                    EngineCredentialsVersion `json:"version" yaml:"version"`
+	RetainedConfigurationEncryptionGenerations *[]uint64 `json:"retainedConfigurationEncryptionGenerations,omitempty" yaml:"retainedConfigurationEncryptionGenerations,omitempty"`
+
+	// Seed Exactly 32 uniformly random bytes encoded with strict standard
+	// padded base64. This field is secret.
+	Seed    string                   `json:"seed" yaml:"seed"`
+	Version EngineCredentialsVersion `json:"version" yaml:"version"`
 }
 
 // EngineCredentialsVersion defines model for EngineCredentials.Version.
@@ -651,10 +651,10 @@ type Telemetry struct {
 	// Starts with hash algorithm, e.g. sha256, followed by a : and the hex of the fingerprint.
 	Certificates *[]string `json:"certificates,omitempty" yaml:"certificates,omitempty"`
 
-	// Credentials Locally usable engine credential. The master is sensitive and MUST be
+	// Credentials Locally usable engine credential. The seed is sensitive and MUST be
 	// redacted from logs, errors, metrics, traces, and diagnostic output.
 	// Private authentication and configuration-encryption keys are derived
-	// from this master; they are never transmitted to a controller. Key IDs
+	// from this seed; they are never transmitted to a controller. Key IDs
 	// are deterministic fingerprints derived from the corresponding public
 	// key and generation, so no server-issued key ID is stored here.
 	Credentials EngineCredentials `json:"credentials" yaml:"credentials"`

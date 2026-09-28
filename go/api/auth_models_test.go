@@ -10,7 +10,7 @@ func TestEngineCredentialsJSONShape(t *testing.T) {
 	retained := []uint64{1, 2}
 	want := EngineCredentials{
 		Version:                           DatabackerCredentialsV2,
-		Master:                            strings.Repeat("A", 43) + "=",
+		Seed:                              strings.Repeat("A", 43) + "=",
 		AuthenticationGeneration:          3,
 		ConfigurationEncryptionGeneration: 4,
 		RetainedConfigurationEncryptionGenerations: &retained,
@@ -29,8 +29,8 @@ func TestEngineCredentialsJSONShape(t *testing.T) {
 	if got.Version != DatabackerCredentialsV2 {
 		t.Fatalf("version = %q, want %q", got.Version, DatabackerCredentialsV2)
 	}
-	if got.Master != want.Master {
-		t.Fatal("master did not survive credential round trip")
+	if got.Seed != want.Seed {
+		t.Fatal("seed did not survive credential round trip")
 	}
 	if got.AuthenticationGeneration != 3 || got.ConfigurationEncryptionGeneration != 4 {
 		t.Fatalf("unexpected generations: auth=%d config=%d", got.AuthenticationGeneration, got.ConfigurationEncryptionGeneration)

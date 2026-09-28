@@ -22,15 +22,15 @@ components:
     EngineCredentials:
       type: object
       description: |
-        Locally usable engine credential. The master is sensitive and MUST be
+        Locally usable engine credential. The seed is sensitive and MUST be
         redacted from logs, errors, metrics, traces, and diagnostic output.
         Private authentication and configuration-encryption keys are derived
-        from this master; they are never transmitted to a controller. Key IDs
+        from this seed; they are never transmitted to a controller. Key IDs
         are deterministic fingerprints derived from the corresponding public
         key and generation, so no server-issued key ID is stored here.
       required:
         - version
-        - master
+        - seed
         - authenticationGeneration
         - configurationEncryptionGeneration
       properties:
@@ -38,7 +38,7 @@ components:
           type: string
           enum:
             - databacker-credentials/v2
-        master:
+        seed:
           type: string
           pattern: '^[A-Za-z0-9+/]{43}=$'
           description: |

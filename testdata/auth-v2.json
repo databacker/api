@@ -27,7 +27,7 @@
     "sharedSecretHex": "ebf5914c0df7c28f227777dfa555be798c036cf3f6a4f012fdac9724d736d65c",
     "tamperedCiphertextBase64": "pB3V5bDa2HenhEDWABWMzMLIRa2wypvxYKdbErrqFJBw4qRZmoGWkzHVWOeHUgHLeQm+GnybcOkViMA1kVZBkQkEULymzgjB9qv5FbCbpVjXgX63JxQPiXWA0nVl9woDOXJ5sUe9WcQjai3z1h6AzkQRNAQc5z7Y7Kc="
   },
-  "masterBase64": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
+  "seedBase64": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
   "signature": {
     "base": "\"@method\": GET\n\"@authority\": engine.example\n\"@path\": /engines/config/engine-123\n\"@query\": ?\n\"@signature-params\": (\"@method\" \"@authority\" \"@path\" \"@query\");created=1700000000;expires=1700000300;keyid=\"auth:10ae5b498547bbbb760358b0f2ee659ccbf17e8858263eff0c06225c6ebbaf3e\";nonce=\"oKGio6SlpqeoqaqrrK2urw\";tag=\"databacker-engine-v1\"",
     "created": 1700000000,
