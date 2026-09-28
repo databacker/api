@@ -10,7 +10,7 @@ and must never be used as a real credential.
 
 ## Local credential and derived keys
 
-An engine credential master is exactly 32 uniformly random bytes. Configuration
+An engine credential seed is exactly 32 uniformly random bytes. Configuration
 uses strict standard padded base64. New credentials start both generations at
 1; generation 0 is invalid.
 
@@ -19,7 +19,7 @@ Derive a pseudorandom key with HKDF-Extract-SHA-256:
 ```text
 PRK = HKDF-Extract-SHA256(
     salt = "databacker engine credential v2",
-    IKM  = master
+    IKM  = seed
 )
 ```
 
@@ -61,7 +61,7 @@ key-ID digest is SHA-256 over exactly one of these byte strings:
 
 The display forms are `auth:` or `config:` followed by the complete digest as
 64 lowercase hexadecimal characters. Anyone with the public key and generation
-computes the same ID. The engine derives the public key from its local master
+computes the same ID. The engine derives the public key from its local seed
 and generation, so it does not store a server-issued key ID. During
 registration, the controller computes the ID from the submitted public key and
 generation and stores that fingerprint with the key and engine record. It MUST
@@ -198,5 +198,5 @@ AEAD authentication to fail.
 
 Plaintext is limited to 4 MiB. Validate envelope algorithms, identifiers,
 decoded lengths, version monotonicity, and recipient key identity before
-decryption. Never log plaintext, the master, derived private keys, the shared
+decryption. Never log plaintext, the seed, derived private keys, the shared
 secret, signatures, or nonces.
