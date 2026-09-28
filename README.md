@@ -72,21 +72,35 @@ for example logs, both submission by a databacker endpoint and retrieval by a us
 
 ### Authentication & Authorization
 
-API requests must be authenticated.
-[Json Web Tokens (JWT)](https://jwt.io/), defined in [RFC7519](https://tools.ietf.org/html/rfc7519)
-are used for validating and authorizing requests.
+Every engine request is authenticated directly with an Ed25519 HTTP Message
+Signature as defined by RFC 9421. HTTPS remains required for server
+authentication, confidentiality, and metadata protection. There is no bearer
+token exchange.
 
-The JWTs are issued via one of two methods:
+The signature `keyid` is a deterministic, domain-separated fingerprint of the
+registered authentication public key and its generation—not an arbitrary or
+server-issued identifier. The engine and server compute it independently. It
+indexes the stored public key and resolves the authenticated engine; the public
+key itself is not sent on every request. An `{instance}` path parameter must
+equal that authenticated identity, so changing the path never selects a
+different identity. Body-bearing requests also carry an RFC 9530 SHA-256
+`Content-Digest` and a signed idempotency key.
 
-* OAuth2 Client Flow, for databacker instances (reporting, orchestration)
+The exact signature profile, credential derivation, key IDs, and encrypted
+configuration envelope are specified in [auth.md](auth.md).
 
-#### OAuth2 Client Flow
+### Configuration documents
 
-Databacker instances use the [OAuth2 Client Flow](https://datatracker.ietf.org/doc/html/rfc6749#section-4.4).
+The shared `Config` schema is used for local files, remote responses, and
+decrypted configuration. Its `kind` remains composable: a `remote` document may
+resolve to another `remote`, an `encrypted` document decrypts to another
+complete `Config`, and traversal ends when the engine reaches a usable `local`
+configuration.
 
-The databacker instance authenticates using the ECDSA public key affiliated with the instance, using
-it to generate a JWT, which is submitted for all future requests. Once the JWT expires, the databacker
-instance must re-authenticate.
+Credentials may appear in a local or decrypted remote document when they are
+needed for a subsequent remote or telemetry hop. Zero-knowledge Cloud storage
+is achieved by storing the outer `kind: encrypted` document without receiving
+its plaintext, not by forbidding credentials in the encrypted plaintext.
 
 ### Endpoints
 

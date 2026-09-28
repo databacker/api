@@ -129,10 +129,29 @@ const (
 	Warn  ConfigSpecLogging = "warn"
 )
 
-// Defines values for EncryptedSpecAlgorithm.
+// Defines values for EncryptedSpecEncryption.
 const (
-	EncryptedSpecAlgorithmAes256Gcm        EncryptedSpecAlgorithm = "aes256-gcm"
-	EncryptedSpecAlgorithmChacha20Poly1305 EncryptedSpecAlgorithm = "chacha20-poly1305"
+	EncryptedSpecEncryptionChacha20Poly1305 EncryptedSpecEncryption = "chacha20-poly1305"
+)
+
+// Defines values for EncryptedSpecKeyAgreement.
+const (
+	X25519 EncryptedSpecKeyAgreement = "x25519"
+)
+
+// Defines values for EncryptedSpecKeyDerivation.
+const (
+	HkdfSha256 EncryptedSpecKeyDerivation = "hkdf-sha256"
+)
+
+// Defines values for EncryptedSpecPlaintextMediaType.
+const (
+	ApplicationJSON EncryptedSpecPlaintextMediaType = "application/json"
+)
+
+// Defines values for EncryptedSpecVersion.
+const (
+	DatabackerEncryptedConfigV2 EncryptedSpecVersion = "databacker-encrypted-config/v2"
 )
 
 // Defines values for EncryptionAlgorithm.
@@ -144,9 +163,9 @@ const (
 	EncryptionAlgorithmSmimeAes256Cbc      EncryptionAlgorithm = "smime-aes256-cbc"
 )
 
-// Defines values for KeyInfo.
+// Defines values for EngineCredentialsVersion.
 const (
-	SymmetricKey KeyInfo = "SymmetricKey"
+	DatabackerCredentialsV2 EngineCredentialsVersion = "databacker-credentials/v2"
 )
 
 // Defines values for OtelStatusCode.
@@ -290,12 +309,16 @@ type CommonRemoteDetails struct {
 	// Starts with hash algorithm, e.g. sha256, followed by a : and the hex of the fingerprint.
 	Certificates *[]string `json:"certificates,omitempty" yaml:"certificates,omitempty"`
 
-	// Credentials Credentials to use to authenticate to the remote server.
-	// Format is base64-encoded Curve25519 key
-	Credentials *string `json:"credentials,omitempty" yaml:"credentials,omitempty"`
+	// Credentials Locally usable engine credential. The master is sensitive and MUST be
+	// redacted from logs, errors, metrics, traces, and diagnostic output.
+	// Private authentication and configuration-encryption keys are derived
+	// from this master; they are never transmitted to a controller. Key IDs
+	// are deterministic fingerprints derived from the corresponding public
+	// key and generation, so no server-issued key ID is stored here.
+	Credentials EngineCredentials `json:"credentials" yaml:"credentials"`
 
 	// URL URL to the remote
-	URL *string `json:"url,omitempty" yaml:"url,omitempty"`
+	URL string `json:"url" yaml:"url"`
 }
 
 // Config Base configuration for a databack instance, with details in the spec.
@@ -397,23 +420,50 @@ type Dump struct {
 	Triggers *bool `json:"triggers,omitempty" yaml:"triggers,omitempty"`
 }
 
-// EncryptedSpec Spec that is encrypted, using the provided algorithm. The symmetric key is encrypted with the public key of the instance.
+// EncryptedSpec Versioned zero-knowledge configuration envelope. Decrypting ciphertext
+// yields one complete Config document serialized as plaintextMediaType;
+// that document may itself be local, remote, or encrypted.
 type EncryptedSpec struct {
-	// Algorithm algorithm used to encrypt the data, lower-case, with the key derived using NaCL key agreement
-	Algorithm *EncryptedSpecAlgorithm `json:"algorithm,omitempty" yaml:"algorithm,omitempty"`
+	// Ciphertext Strict standard padded base64 of the ciphertext followed by the
+	// 16-byte Poly1305 authentication tag. Decrypted plaintext is limited
+	// to 4 MiB.
+	Ciphertext string `json:"ciphertext" yaml:"ciphertext"`
 
-	// Data encrypted data base64-encoded, when decrypted should be a valid Config
-	Data *string `json:"data,omitempty" yaml:"data,omitempty"`
+	// ConfigurationVersion Monotonically increasing configuration version for rollback protection.
+	ConfigurationVersion uint64                     `json:"configurationVersion" yaml:"configurationVersion"`
+	Encryption           EncryptedSpecEncryption    `json:"encryption" yaml:"encryption"`
+	KeyAgreement         EncryptedSpecKeyAgreement  `json:"keyAgreement" yaml:"keyAgreement"`
+	KeyDerivation        EncryptedSpecKeyDerivation `json:"keyDerivation" yaml:"keyDerivation"`
 
-	// RecipientPublicKey public key of the recipient, base64-encoded
-	RecipientPublicKey *string `json:"recipientPublicKey,omitempty" yaml:"recipientPublicKey,omitempty"`
+	// Nonce Twelve-byte ChaCha20-Poly1305 nonce in strict standard padded base64.
+	Nonce               string                          `json:"nonce" yaml:"nonce"`
+	PlaintextMediaType  EncryptedSpecPlaintextMediaType `json:"plaintextMediaType" yaml:"plaintextMediaType"`
+	RecipientGeneration uint64                          `json:"recipientGeneration" yaml:"recipientGeneration"`
 
-	// SenderPublicKey public key of the recipient, base64-encoded
-	SenderPublicKey *string `json:"senderPublicKey,omitempty" yaml:"senderPublicKey,omitempty"`
+	// RecipientKeyID Full canonical deterministic fingerprint of the recipient X25519
+	// public key and generation. This is recomputed from the key material
+	// according to auth.md, not allocated by a database or controller.
+	RecipientKeyID string `json:"recipientKeyId" yaml:"recipientKeyId"`
+
+	// SenderPublicKey Raw 32-byte ephemeral X25519 public key in strict standard padded base64.
+	SenderPublicKey string               `json:"senderPublicKey" yaml:"senderPublicKey"`
+	Version         EncryptedSpecVersion `json:"version" yaml:"version"`
 }
 
-// EncryptedSpecAlgorithm algorithm used to encrypt the data, lower-case, with the key derived using NaCL key agreement
-type EncryptedSpecAlgorithm string
+// EncryptedSpecEncryption defines model for EncryptedSpec.Encryption.
+type EncryptedSpecEncryption string
+
+// EncryptedSpecKeyAgreement defines model for EncryptedSpec.KeyAgreement.
+type EncryptedSpecKeyAgreement string
+
+// EncryptedSpecKeyDerivation defines model for EncryptedSpec.KeyDerivation.
+type EncryptedSpecKeyDerivation string
+
+// EncryptedSpecPlaintextMediaType defines model for EncryptedSpec.PlaintextMediaType.
+type EncryptedSpecPlaintextMediaType string
+
+// EncryptedSpecVersion defines model for EncryptedSpec.Version.
+type EncryptedSpecVersion string
 
 // Encryption defines model for Encryption.
 type Encryption struct {
@@ -430,11 +480,35 @@ type Encryption struct {
 // EncryptionAlgorithm algorithm to use for encryption
 type EncryptionAlgorithm string
 
+// EngineCredentials Locally usable engine credential. The master is sensitive and MUST be
+// redacted from logs, errors, metrics, traces, and diagnostic output.
+// Private authentication and configuration-encryption keys are derived
+// from this master; they are never transmitted to a controller. Key IDs
+// are deterministic fingerprints derived from the corresponding public
+// key and generation, so no server-issued key ID is stored here.
+type EngineCredentials struct {
+	// AuthenticationGeneration Generation used to derive the Ed25519 request-signing key.
+	AuthenticationGeneration uint64 `json:"authenticationGeneration" yaml:"authenticationGeneration"`
+
+	// ConfigurationEncryptionGeneration Generation used to derive the active X25519 configuration key.
+	ConfigurationEncryptionGeneration uint64 `json:"configurationEncryptionGeneration" yaml:"configurationEncryptionGeneration"`
+
+	// Master Exactly 32 uniformly random bytes encoded with strict standard
+	// padded base64. This field is secret.
+	Master string `json:"master" yaml:"master"`
+
+	// RetainedConfigurationEncryptionGenerations Older positive X25519 generations retained temporarily to decrypt
+	// configurations during ordinary key rotation. Generation zero and
+	// the active generation are invalid entries.
+	RetainedConfigurationEncryptionGenerations *[]uint64                `json:"retainedConfigurationEncryptionGenerations,omitempty" yaml:"retainedConfigurationEncryptionGenerations,omitempty"`
+	Version                                    EngineCredentialsVersion `json:"version" yaml:"version"`
+}
+
+// EngineCredentialsVersion defines model for EngineCredentials.Version.
+type EngineCredentialsVersion string
+
 // File defines model for File.
 type File = map[string]interface{}
-
-// KeyInfo types of info to use for key derivation functions
-type KeyInfo string
 
 // Log defines model for Log.
 type Log struct {
@@ -577,10 +651,14 @@ type Telemetry struct {
 	// Starts with hash algorithm, e.g. sha256, followed by a : and the hex of the fingerprint.
 	Certificates *[]string `json:"certificates,omitempty" yaml:"certificates,omitempty"`
 
-	// Credentials Credentials to use to authenticate to the remote server.
-	// Format is base64-encoded Curve25519 key
-	Credentials *string `json:"credentials,omitempty" yaml:"credentials,omitempty"`
+	// Credentials Locally usable engine credential. The master is sensitive and MUST be
+	// redacted from logs, errors, metrics, traces, and diagnostic output.
+	// Private authentication and configuration-encryption keys are derived
+	// from this master; they are never transmitted to a controller. Key IDs
+	// are deterministic fingerprints derived from the corresponding public
+	// key and generation, so no server-issued key ID is stored here.
+	Credentials EngineCredentials `json:"credentials" yaml:"credentials"`
 
 	// URL URL to the remote
-	URL *string `json:"url,omitempty" yaml:"url,omitempty"`
+	URL string `json:"url" yaml:"url"`
 }

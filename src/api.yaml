@@ -9,13 +9,18 @@ servers:
     description: download of configuration by databacker instances
 
 security:
-  - JWT: []
+  - EngineSignatureInput: []
+    EngineSignature: []
 
 paths:
   /engines/config/{instance}:
     get:
       operationId: getConfigInstance
-      description: Returns the configuration for a specific databacker instance identified by ID
+      description: |
+        Returns a complete Config document for a specific databacker instance.
+        The document may be local, remote, or encrypted. Authentication is
+        derived from the verified signature key; the authenticated engine must
+        equal the instance path parameter.
       parameters:
         - in: path
           name: instance
@@ -41,6 +46,10 @@ paths:
                 properties:           
                   message:
                     type: string
+        '401':
+          $ref: '#/components/responses/EngineUnauthorized'
+        '403':
+          $ref: '#/components/responses/EngineForbidden'
 
   /engines/telemetry/{instance}/log:
     get:
@@ -75,23 +84,9 @@ paths:
                   message:
                     type: string
         '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object 
-                properties:           
-                  message:
-                    type: string
+          $ref: '#/components/responses/EngineUnauthorized'
         '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                type: object 
-                properties:           
-                  message:
-                    type: string
+          $ref: '#/components/responses/EngineForbidden'
     post:
       operationId: postTelemetryInstanceLog
       description: upload logs from a databacker instance
@@ -102,6 +97,8 @@ paths:
             type: string
           required: true
           description: Unique ID of the databacker instance for whom the log is being uploaded
+        - $ref: '#/components/parameters/ContentDigest'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -121,23 +118,9 @@ paths:
                   message:
                     type: string
         '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object 
-                properties:           
-                  message:
-                    type: string
+          $ref: '#/components/responses/EngineUnauthorized'
         '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                type: object 
-                properties:           
-                  message:
-                    type: string
+          $ref: '#/components/responses/EngineForbidden'
 
   /engines/telemetry/{instance}/traces:
     get:
@@ -172,23 +155,9 @@ paths:
                   message:
                     type: string
         '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object 
-                properties:           
-                  message:
-                    type: string
+          $ref: '#/components/responses/EngineUnauthorized'
         '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                type: object 
-                properties:           
-                  message:
-                    type: string
+          $ref: '#/components/responses/EngineForbidden'
     post:
       operationId: postTelemetryInstanceTraces
       description: upload OTLP traces from a databacker instance
@@ -199,6 +168,8 @@ paths:
             type: string
           required: true
           description: Unique ID of the databacker instance for whom the log is being uploaded
+        - $ref: '#/components/parameters/ContentDigest'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -226,23 +197,9 @@ paths:
                   message:
                     type: string
         '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object 
-                properties:           
-                  message:
-                    type: string
+          $ref: '#/components/responses/EngineUnauthorized'
         '403':
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                type: object 
-                properties:           
-                  message:
-                    type: string
+          $ref: '#/components/responses/EngineForbidden'
         '429':
           description: "Rate Limited"
           headers:
@@ -250,3 +207,64 @@ paths:
               schema:
                 type: string
                 description: "Seconds to wait before retrying"                    
+
+components:
+  securitySchemes:
+    EngineSignatureInput:
+      type: apiKey
+      in: header
+      name: Signature-Input
+      description: RFC 9421 signature parameters using the Databacker engine profile.
+    EngineSignature:
+      type: apiKey
+      in: header
+      name: Signature
+      description: RFC 9421 Ed25519 signature using the Databacker engine profile.
+  parameters:
+    ContentDigest:
+      name: Content-Digest
+      in: header
+      required: true
+      description: RFC 9530 SHA-256 digest of the transmitted request content.
+      schema:
+        type: string
+        maxLength: 128
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Stable UUID reused for retries of the same mutation or ingestion request.
+      schema:
+        type: string
+        format: uuid
+  responses:
+    EngineUnauthorized:
+      description: |
+        Authentication failed. The response does not disclose whether a key
+        exists, is revoked, belongs to another engine, or produced an invalid
+        signature. The Date header supplies server time for clock diagnostics.
+      headers:
+        Date:
+          required: true
+          schema:
+            type: string
+          description: Server time in HTTP-date format.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    EngineForbidden:
+      description: Authenticated engine is not authorized because of engine or account state.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          maxLength: 256
