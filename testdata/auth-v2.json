@@ -4,11 +4,11 @@
   "authenticationPublicKeyBase64": "bCfocojhXze28IS3hlHnttC+OO469HweOvPruf3q8wY=",
   "authenticationSeedHex": "c40bd29bb8d778a41eccba23cead97d35c21b9956e2efdbf8e976f8e0ebdc159",
   "bodySignature": {
-    "base": "\"@method\": POST\n\"@authority\": engine.example\n\"@path\": /engines/telemetry/engine-123/traces\n\"@query\": ?format=otlp&part=one&part=two\n\"content-digest\";sf: sha-256=:F+iNsYev1iwW5d6/PmUnzQBrwBK8kLUagQzYDC1RH0M=:\n\"content-type\": application/x-protobuf\n\"idempotency-key\": 550e8400-e29b-41d4-a716-446655440000\n\"@signature-params\": (\"@method\" \"@authority\" \"@path\" \"@query\" \"content-digest\";sf \"content-type\" \"idempotency-key\");created=1700000000;expires=1700000300;keyid=\"auth:10ae5b498547bbbb760358b0f2ee659ccbf17e8858263eff0c06225c6ebbaf3e\";nonce=\"oKGio6SlpqeoqaqrrK2urw\";tag=\"databacker-engine-v1\"",
+    "base": "\"@method\": POST\n\"@authority\": engine.example\n\"@path\": /engines/telemetry/traces\n\"@query\": ?format=otlp&part=one&part=two\n\"content-digest\";sf: sha-256=:F+iNsYev1iwW5d6/PmUnzQBrwBK8kLUagQzYDC1RH0M=:\n\"content-type\": application/x-protobuf\n\"idempotency-key\": 550e8400-e29b-41d4-a716-446655440000\n\"@signature-params\": (\"@method\" \"@authority\" \"@path\" \"@query\" \"content-digest\";sf \"content-type\" \"idempotency-key\");created=1700000000;expires=1700000300;keyid=\"auth:10ae5b498547bbbb760358b0f2ee659ccbf17e8858263eff0c06225c6ebbaf3e\";nonce=\"oKGio6SlpqeoqaqrrK2urw\";tag=\"databacker-engine-v1\"",
     "bodyBase64": "AAECAwQF",
     "contentDigest": "sha-256=:F+iNsYev1iwW5d6/PmUnzQBrwBK8kLUagQzYDC1RH0M=:",
     "idempotencyKey": "550e8400-e29b-41d4-a716-446655440000",
-    "signatureBase64": "PdSf1H+hH8D0NkvZrQ4aRmu0znWUOw3TDKcdvZcAePajX9j+6IBxoLFQpR2bpf0TkuWEBJ+XBGKQrJodgWPzAQ==",
+    "signatureBase64": "cv7VymK8EtPIUGh6Qms+d4C6QNhrl4hmlhcxgLcZs/AwXhb9i8r3LMrzDPHEfliXhnRNOQQjGXY1w1vqNUQ+Dg==",
     "signatureParams": "(\"@method\" \"@authority\" \"@path\" \"@query\" \"content-digest\";sf \"content-type\" \"idempotency-key\");created=1700000000;expires=1700000300;keyid=\"auth:10ae5b498547bbbb760358b0f2ee659ccbf17e8858263eff0c06225c6ebbaf3e\";nonce=\"oKGio6SlpqeoqaqrrK2urw\";tag=\"databacker-engine-v1\""
   },
   "configurationEncryptionGeneration": 1,
@@ -16,24 +16,23 @@
   "configurationPrivateInputHex": "ed560b1170bf4ac738abffe40b9bc0b0aa693b606ebca76073315bdf259c24b6",
   "configurationPublicKeyBase64": "XwG2fwzzSPppHov/SmmQ2SlsfbgAqscGd+UztjrLOEo=",
   "envelope": {
-    "aadHex": "00000028646174616261636b65722f636f6e66696775726174696f6e2d656e76656c6f70652d6161642f76320000000a656e67696e652d3132330000001e646174616261636b65722d656e637279707465642d636f6e6669672f7632000000000000000100000047636f6e6669673a356265396362653438646366666461373366666331626566653239393365303830663139633361663463656365636261333430313630373965393438633435610000000000000001000000067832353531390000000b686b64662d7368613235360000001163686163686132302d706f6c7931333035000000106170706c69636174696f6e2f6a736f6e00000020358072d6365880d1aeea329adf9121383851ed21a28e3b75e965d0d2cd1662540000000c000102030405060708090a0b",
-    "aeadKeyHex": "1c0d857f14018d82d1192b93e60fb701ea6952416f2fd564f234bef7a4d85030",
-    "ciphertextBase64": "pB3V5bDa2HenhEDWABWMzMLIRa2wypvxYKdbErrqFJBw4qRZmoGWkzHVWOeHUgHLeQm+GnybcOkViMA1kVZBkQkEULymzgjB9qv5FbCbpVjXgX63JxQPiXWA0nVl9woDOXJ5sUe9WcQjai3z1h6AzkQRNAQc5z7Y7KY=",
-    "instance": "engine-123",
+    "aadHex": "00000028646174616261636b65722f636f6e66696775726174696f6e2d656e76656c6f70652d6161642f76320000001e646174616261636b65722d656e637279707465642d636f6e6669672f7632000000000000000100000047636f6e6669673a356265396362653438646366666461373366666331626566653239393365303830663139633361663463656365636261333430313630373965393438633435610000000000000001000000067832353531390000000b686b64662d7368613235360000001163686163686132302d706f6c7931333035000000106170706c69636174696f6e2f6a736f6e00000020358072d6365880d1aeea329adf9121383851ed21a28e3b75e965d0d2cd1662540000000c000102030405060708090a0b",
+    "aeadKeyHex": "b24c78d1089954de0b217e34a75af25ad2d24254dc537e331b1dfb3e304b58b6",
+    "ciphertextBase64": "UZGvDJSg+C84SF9gwPdNKxC2oUhx1+0O44gy8hgNKnIlTRu5kTJWmRVUDywXkZp+meEdHNOfhNXamwZYJgR9oDMVrR2N2Qx1SAJCXTiwvO8nzxQ2SUA2tKAPfDUJXvfB1PAfNHG8gyAj4LC03uHivCpJxo3qCFztgSw=",
     "nonceBase64": "AAECAwQFBgcICQoL",
     "plaintextBase64": "eyJ2ZXJzaW9uIjoiY29uZmlnLmRhdGFiYWNrLmlvL3YxIiwia2luZCI6ImxvY2FsIiwibWV0YWRhdGEiOnsibmFtZSI6ImZpeHR1cmUifSwic3BlYyI6eyJsb2dnaW5nIjoiaW5mbyJ9fQ==",
     "senderPrivateInputHex": "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f",
     "senderPublicKeyBase64": "NYBy1jZYgNGu6jKa35EhODhR7SGijjt16WXQ0s0WYlQ=",
     "sharedSecretHex": "ebf5914c0df7c28f227777dfa555be798c036cf3f6a4f012fdac9724d736d65c",
-    "tamperedCiphertextBase64": "pB3V5bDa2HenhEDWABWMzMLIRa2wypvxYKdbErrqFJBw4qRZmoGWkzHVWOeHUgHLeQm+GnybcOkViMA1kVZBkQkEULymzgjB9qv5FbCbpVjXgX63JxQPiXWA0nVl9woDOXJ5sUe9WcQjai3z1h6AzkQRNAQc5z7Y7Kc="
+    "tamperedCiphertextBase64": "UZGvDJSg+C84SF9gwPdNKxC2oUhx1+0O44gy8hgNKnIlTRu5kTJWmRVUDywXkZp+meEdHNOfhNXamwZYJgR9oDMVrR2N2Qx1SAJCXTiwvO8nzxQ2SUA2tKAPfDUJXvfB1PAfNHG8gyAj4LC03uHivCpJxo3qCFztgS0="
   },
   "seedBase64": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=",
   "signature": {
-    "base": "\"@method\": GET\n\"@authority\": engine.example\n\"@path\": /engines/config/engine-123\n\"@query\": ?\n\"@signature-params\": (\"@method\" \"@authority\" \"@path\" \"@query\");created=1700000000;expires=1700000300;keyid=\"auth:10ae5b498547bbbb760358b0f2ee659ccbf17e8858263eff0c06225c6ebbaf3e\";nonce=\"oKGio6SlpqeoqaqrrK2urw\";tag=\"databacker-engine-v1\"",
+    "base": "\"@method\": GET\n\"@authority\": engine.example\n\"@path\": /engines/config\n\"@query\": ?\n\"@signature-params\": (\"@method\" \"@authority\" \"@path\" \"@query\");created=1700000000;expires=1700000300;keyid=\"auth:10ae5b498547bbbb760358b0f2ee659ccbf17e8858263eff0c06225c6ebbaf3e\";nonce=\"oKGio6SlpqeoqaqrrK2urw\";tag=\"databacker-engine-v1\"",
     "created": 1700000000,
     "expires": 1700000300,
     "nonce": "oKGio6SlpqeoqaqrrK2urw",
-    "signatureBase64": "iyLdzwrKfmJ5CaPLNkSNyPPyXV0YQFRixjJyn1c6tc0J4dI3WSwmh9/SqgRKXN3YhAJD054FQ1IrNcdYfshwDQ==",
+    "signatureBase64": "UBqMiyDjEJzkrrkyhBk9HM5F/zRt4+K3b0eGhsDWAEqq99SFg/0f3RI1wog2ImnOUl6eareKtyHvaEyWUl1uAA==",
     "signatureParams": "(\"@method\" \"@authority\" \"@path\" \"@query\");created=1700000000;expires=1700000300;keyid=\"auth:10ae5b498547bbbb760358b0f2ee659ccbf17e8858263eff0c06225c6ebbaf3e\";nonce=\"oKGio6SlpqeoqaqrrK2urw\";tag=\"databacker-engine-v1\""
   }
 }
