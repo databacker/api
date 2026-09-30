@@ -6,6 +6,13 @@ info:
 paths: {} # technically not needed under openapi3, but does not hurt, and aids backwards-compatibility
 components:
   schemas:
+    EncryptionDomain:
+      type: string
+      oneOf:
+      - title: AuthenticationDomain
+        const: "databacker/engine-key-id/authentication/ed25519/v1"
+      - title: ConfigurationDomain
+        const: "databacker/engine-key-id/configuration-encryption/x25519/v1"  
     Metadata:
       type: object
       properties:

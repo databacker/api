@@ -483,6 +483,24 @@ func (e EncryptionAlgorithm) Valid() bool {
 	}
 }
 
+// Defines values for EncryptionDomain.
+const (
+	AuthenticationDomain EncryptionDomain = "databacker/engine-key-id/authentication/ed25519/v1"
+	ConfigurationDomain  EncryptionDomain = "databacker/engine-key-id/configuration-encryption/x25519/v1"
+)
+
+// Valid indicates whether the value is a known member of the EncryptionDomain enum.
+func (e EncryptionDomain) Valid() bool {
+	switch e {
+	case AuthenticationDomain:
+		return true
+	case ConfigurationDomain:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for EngineCredentialsVersion.
 const (
 	DatabackerCredentialsV2 EngineCredentialsVersion = "databacker-credentials/v2"
@@ -840,6 +858,9 @@ type Encryption struct {
 
 // EncryptionAlgorithm algorithm to use for encryption
 type EncryptionAlgorithm string
+
+// EncryptionDomain defines model for EncryptionDomain.
+type EncryptionDomain string
 
 // EngineCredentials Locally usable engine credential. The seed is sensitive and MUST be
 // redacted from logs, errors, metrics, traces, and diagnostic output.
